@@ -594,9 +594,9 @@ export default function HealthCalendar() {
 
       {/* 선택된 날짜의 상세 정보 */}
       {selectedDate && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-6">
+          <div className="flex flex-col gap-3 mb-4 md:mb-6">
+            <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">
               {selectedDate.toLocaleDateString('ko-KR', {
                 year: 'numeric',
                 month: 'long',
@@ -604,22 +604,22 @@ export default function HealthCalendar() {
                 weekday: 'long',
               })}
             </h3>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => handleAddHealthRecord(selectedDate)}
-                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                className="flex-1 min-w-[100px] px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
               >
                 + 건강
               </button>
               <button
                 onClick={() => handleAddEvent(selectedDate)}
-                className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                className="flex-1 min-w-[100px] px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
               >
                 + 일정
               </button>
               <button
                 onClick={() => handleAddDiary(selectedDate)}
-                className="px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                className="flex-1 min-w-[100px] px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
               >
                 + 다이어리
               </button>
