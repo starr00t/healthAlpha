@@ -426,7 +426,7 @@ export default function HealthCalendar() {
         </div>
 
         {/* 캘린더 그리드 */}
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-1">
           {calendarDays.map((date, index) => {
             const dateHasRecords = hasRecords(date);
             const dateIsToday = isToday(date);
@@ -448,7 +448,7 @@ export default function HealthCalendar() {
                 <button
                   onClick={() => handleDateClick(date)}
                   className={`
-                    w-full min-h-[120px] p-2 rounded-lg transition-all flex flex-col items-start
+                    w-full min-h-[100px] p-1 rounded transition-all flex flex-col items-start
                     ${viewMode === 'month' && !dateIsCurrentMonth ? 'text-gray-400 dark:text-gray-600' : 'text-gray-900 dark:text-white'}
                     ${dateIsToday ? 'ring-2 ring-primary-500 font-bold' : ''}
                     ${dateIsSelected ? 'ring-2 ring-primary-600 bg-primary-50 dark:bg-primary-900/20' : healthColor}
@@ -456,12 +456,12 @@ export default function HealthCalendar() {
                   `}
                 >
                   {/* 날짜 및 기분 (상단 배치) */}
-                  <div className="w-full flex justify-between items-start mb-1">
-                    <div className={`text-sm ${dateIsToday ? 'font-bold' : 'font-medium'}`}>
+                  <div className="w-full flex justify-between items-start mb-0.5">
+                    <div className={`text-xs ${dateIsToday ? 'font-bold' : 'font-medium'}`}>
                       {date.getDate()}
                     </div>
                     {dateDiary?.mood && (
-                      <span className="text-base" title={dateDiary.mood}>
+                      <span className="text-sm" title={dateDiary.mood}>
                         {moodEmojis[dateDiary.mood]}
                       </span>
                     )}
@@ -469,26 +469,26 @@ export default function HealthCalendar() {
                   
                   {/* 건강 데이터 표시 */}
                   {latestRecord && (
-                    <div className="w-full space-y-0.5 text-left mb-1">
+                    <div className="w-full space-y-0 text-left mb-0.5 leading-tight">
                       {latestRecord.weight && (
-                        <div className="flex items-center gap-1 text-xs truncate">
-                          <span className="text-blue-600 dark:text-blue-400">⚖️</span>
+                        <div className="flex items-center gap-0.5 text-[10px] truncate">
+                          <span className="text-[10px] text-blue-600 dark:text-blue-400">⚖️</span>
                           <span className="text-blue-600 dark:text-blue-400 font-medium">
                             {latestRecord.weight}
                           </span>
                         </div>
                       )}
                       {latestRecord.bloodPressure && (
-                        <div className="flex items-center gap-1 text-xs truncate">
-                          <span className="text-red-600 dark:text-red-400">🩸</span>
+                        <div className="flex items-center gap-0.5 text-[10px] truncate">
+                          <span className="text-[10px] text-red-600 dark:text-red-400">🩸</span>
                           <span className="text-red-600 dark:text-red-400 font-medium">
                             {latestRecord.bloodPressure.systolic}/{latestRecord.bloodPressure.diastolic}
                           </span>
                         </div>
                       )}
                       {latestRecord.bloodSugar && (
-                        <div className="flex items-center gap-1 text-xs truncate">
-                          <span className="text-purple-600 dark:text-purple-400">🍬</span>
+                        <div className="flex items-center gap-0.5 text-[10px] truncate">
+                          <span className="text-[10px] text-purple-600 dark:text-purple-400">🍬</span>
                           <span className="text-purple-600 dark:text-purple-400 font-medium">
                             {latestRecord.bloodSugar}
                           </span>
@@ -497,24 +497,24 @@ export default function HealthCalendar() {
                     </div>
                   )}
                   
-                  {/* 일정 표시 (최대 2개) */}
+                  {/* 일정 표시 (최대 3개) */}
                   {dateEvents.length > 0 && (
-                    <div className="w-full space-y-0.5 mb-1">
-                      {dateEvents.slice(0, 2).map((event) => {
+                    <div className="w-full space-y-0 mb-0.5">
+                      {dateEvents.slice(0, 3).map((event) => {
                         const colors = categoryColors[event.category];
                         return (
                           <div
                             key={event.id}
-                            className={`text-xs px-1.5 py-0.5 rounded truncate ${colors.bg} ${colors.text}`}
+                            className={`text-[10px] px-1 py-0 rounded truncate leading-tight ${colors.bg} ${colors.text}`}
                             title={event.title}
                           >
                             {event.title}
                           </div>
                         );
                       })}
-                      {dateEvents.length > 2 && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          +{dateEvents.length - 2}
+                      {dateEvents.length > 3 && (
+                        <div className="text-[9px] text-gray-500 dark:text-gray-400">
+                          +{dateEvents.length - 3}
                         </div>
                       )}
                     </div>
@@ -522,8 +522,8 @@ export default function HealthCalendar() {
                   
                   {/* 다중 기록 표시 */}
                   {dateRecords.length > 1 && (
-                    <div className="mt-auto text-xs text-gray-500 dark:text-gray-400">
-                      건강 +{dateRecords.length - 1}
+                    <div className="mt-auto text-[9px] text-gray-500 dark:text-gray-400">
+                      +{dateRecords.length - 1}
                     </div>
                   )}
                 </button>
