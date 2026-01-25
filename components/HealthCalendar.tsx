@@ -30,8 +30,9 @@ export default function HealthCalendar() {
   // 사용자 ID 동기화
   useEffect(() => {
     const userId = useHealthStore.getState().userId;
+    const userEmail = useHealthStore.getState().userEmail;
     if (userId) {
-      setCalendarUserId(userId);
+      setCalendarUserId(userId, userEmail);
     }
   }, [setCalendarUserId]);
 

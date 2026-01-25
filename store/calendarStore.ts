@@ -6,9 +6,16 @@ interface CalendarStore {
   events: CalendarEvent[];
   diaries: DiaryEntry[];
   userId: string | null;
+  userEmail: string | null;
+  syncEnabled: boolean;
+  isSyncing: boolean;
+  lastSyncTime: string | null;
   
   // User management
-  setUserId: (userId: string) => void;
+  setUserId: (userId: string, email?: string | null) => void;
+  setSyncEnabled: (enabled: boolean) => void;
+  syncToServer: () => Promise<void>;
+  syncFromServer: () => Promise<void>;
   clearData: () => void;
   
   // Events
@@ -34,13 +41,77 @@ export const useCalendarStore = create<CalendarStore>()(
       events: [],
       diaries: [],
       userId: null,
+      userEmail: null,
+      syncEnabled: true,
+      isSyncing: false,
+      lastSyncTime: null,
 
-      setUserId: (userId) => {
-        set({ userId });
+      setUserId: async (userId, email = null) => {
+        set({ userId, userEmail: email });
+        
+        // 로그인 시 서버에서 데이터 자동 다운로드
+        if (userId && email && get().syncEnabled) {
+          await get().syncFromServer();
+        }
+      },
+
+      setSyncEnabled: (enabled) => {
+        set({ syncEnabled: enabled });
+        if (enabled && get().userEmail) {
+          get().syncToServer();
+        }
+      },
+
+      // 서버로 데이터 업로드
+      syncToServer: async () => {
+        const { userEmail, events, diaries, syncEnabled, isSyncing } = get();
+        if (!syncEnabled || !userEmail || isSyncing) return;
+
+        set({ isSyncing: true });
+        try {
+          const response = await fetch('/api/calendar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: userEmail, events, diaries }),
+          });
+
+          if (response.ok) {
+            set({ lastSyncTime: new Date().toISOString() });
+            console.log('✅ 캘린더 동기화 완료');
+          }
+        } catch (error) {
+          console.error('❌ 캘린더 동기화 실패:', error);
+        } finally {
+          set({ isSyncing: false });
+        }
+      },
+
+      // 서버에서 데이터 다운로드
+      syncFromServer: async () => {
+        const { userEmail, syncEnabled } = get();
+        if (!syncEnabled || !userEmail) return;
+
+        try {
+          const response = await fetch(`/api/calendar?email=${encodeURIComponent(userEmail)}`);
+          
+          if (response.ok) {
+            const { events: serverEvents, diaries: serverDiaries } = await response.json();
+            if (serverEvents || serverDiaries) {
+              set({ 
+                events: serverEvents || [],
+                diaries: serverDiaries || [],
+                lastSyncTime: new Date().toISOString()
+              });
+              console.log('✅ 캘린더 데이터 다운로드 완료');
+            }
+          }
+        } catch (error) {
+          console.error('❌ 캘린더 데이터 다운로드 실패:', error);
+        }
       },
 
       clearData: () => {
-        set({ events: [], diaries: [] });
+        set({ events: [], diaries: [], userEmail: null });
       },
 
       // Events
@@ -105,6 +176,11 @@ export const useCalendarStore = create<CalendarStore>()(
         set((state) => ({
           events: [...state.events, ...eventsToAdd],
         }));
+        
+        // 자동 동기화
+        if (get().syncEnabled) {
+          get().syncToServer();
+        }
       },
 
       updateEvent: (id, updates) => {
@@ -121,6 +197,10 @@ export const useCalendarStore = create<CalendarStore>()(
               : event
           ),
         }));
+        
+        if (get().syncEnabled) {
+          get().syncToServer();
+        }
       },
 
       updateRepeatGroup: (repeatGroupId, updates) => {
@@ -131,12 +211,20 @@ export const useCalendarStore = create<CalendarStore>()(
               : event
           ),
         }));
+        
+        if (get().syncEnabled) {
+          get().syncToServer();
+        }
       },
 
       deleteEvent: (id) => {
         set((state) => ({
           events: state.events.filter((event) => event.id !== id),
         }));
+        
+        if (get().syncEnabled) {
+          get().syncToServer();
+        }
       },
 
       deleteRepeatGroup: (repeatGroupId) => {
@@ -179,6 +267,10 @@ export const useCalendarStore = create<CalendarStore>()(
         set((state) => ({
           diaries: [...state.diaries, newDiary],
         }));
+        
+        if (get().syncEnabled) {
+          get().syncToServer();
+        }
       },
 
       updateDiary: (id, updates) => {
@@ -189,12 +281,20 @@ export const useCalendarStore = create<CalendarStore>()(
               : diary
           ),
         }));
+        
+        if (get().syncEnabled) {
+          get().syncToServer();
+        }
       },
 
       deleteDiary: (id) => {
         set((state) => ({
           diaries: state.diaries.filter((diary) => diary.id !== id),
         }));
+        
+        if (get().syncEnabled) {
+          get().syncToServer();
+        }
       },
 
       getDiaryByDate: (date) => {
@@ -221,7 +321,17 @@ export const useCalendarStore = create<CalendarStore>()(
       partialize: (state) => ({
         events: state.events,
         diaries: state.diaries,
+        userEmail: state.userEmail,
+        syncEnabled: state.syncEnabled,
+        lastSyncTime: state.lastSyncTime,
       }),
+      // 상태 변경 시 자동 동기화
+      onRehydrateStorage: () => (state) => {
+        if (state?.syncEnabled && state?.userEmail) {
+          // 초기 로드 시 동기화
+          state.syncFromServer();
+        }
+      },
     }
   )
 );
