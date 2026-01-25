@@ -546,6 +546,7 @@ export default function AdminPanel() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">상태</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">AI 사용</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">만료일</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">작업</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
@@ -566,6 +567,30 @@ export default function AdminPanel() {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                         {formatDate(u.subscription?.endDate)}
+                      </td>
+                      <td className="px-4 py-3 text-sm space-x-2">
+                        {!u.isAdmin && (
+                          <>
+                            {(!u.subscription || u.subscription.tier === 'free') ? (
+                              <button
+                                onClick={() => {
+                                  setSelectedUser(u);
+                                  setShowModal(true);
+                                }}
+                                className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 font-medium"
+                              >
+                                권한 부여
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleRevokeAccess(u.id, u.name)}
+                                className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-medium"
+                              >
+                                권한 제거
+                              </button>
+                            )}
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
