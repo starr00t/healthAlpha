@@ -54,24 +54,24 @@ export default function HealthRecordForm() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">건강 데이터 입력</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-6">
+      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-gray-800 dark:text-white">건강 데이터 입력</h2>
+      <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             날짜
           </label>
           <input
             type="date"
             value={formData.date}
             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             체중 (kg)
           </label>
           <input
@@ -80,14 +80,14 @@ export default function HealthRecordForm() {
             value={formData.weight}
             onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
             placeholder="예: 70.5"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 수축기 혈압 (mmHg)
               </label>
               <input
@@ -95,11 +95,11 @@ export default function HealthRecordForm() {
                 value={formData.systolic}
                 onChange={(e) => setFormData({ ...formData, systolic: e.target.value })}
                 placeholder="예: 120"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 이완기 혈압 (mmHg)
               </label>
               <input
@@ -107,12 +107,12 @@ export default function HealthRecordForm() {
                 value={formData.diastolic}
                 onChange={(e) => setFormData({ ...formData, diastolic: e.target.value })}
                 placeholder="예: 80"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               심박수 (bpm)
             </label>
             <input
@@ -120,13 +120,13 @@ export default function HealthRecordForm() {
               value={formData.heartRate}
               onChange={(e) => setFormData({ ...formData, heartRate: e.target.value })}
               placeholder="예: 72"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             혈당 (mg/dL)
           </label>
           <input
@@ -135,12 +135,12 @@ export default function HealthRecordForm() {
             value={formData.bloodSugar}
             onChange={(e) => setFormData({ ...formData, bloodSugar: e.target.value })}
             placeholder="예: 95"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             메모
           </label>
           <textarea
@@ -148,7 +148,7 @@ export default function HealthRecordForm() {
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             placeholder="오늘의 건강 상태나 특이사항을 기록하세요"
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
 
