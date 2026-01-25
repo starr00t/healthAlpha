@@ -19,9 +19,10 @@ type TabType = 'users' | 'settings' | 'subscriptions';
 export default function AdminPanel() {
   const { user, getAllUsers, deleteUser, updateUserAdmin, grantPremiumAccess } = useAuthStore();
   const { settings, updateSettings, hasApiKey } = useAdminStore();
-  const [users, setUsers] = useState<StoredUser[]>(getAllUsers());
+  const [users, setUsers] = useState<StoredUser[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<TabType>('users');
+  const [isLoading, setIsLoading] = useState(true);
   
   // OpenAI 설정
   const [apiKey, setApiKey] = useState(settings.openaiApiKey || '');
@@ -41,6 +42,11 @@ export default function AdminPanel() {
   const [duration, setDuration] = useState<number>(30);
   const [isUnlimited, setIsUnlimited] = useState(false);
 
+  // 초기 로드
+  useEffect(() => {
+    refreshUsers();
+  }, []);
+
   if (!user?.isAdmin) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -51,8 +57,16 @@ export default function AdminPanel() {
     );
   }
 
-  const refreshUsers = () => {
-    setUsers(getAllUsers());
+  const refreshUsers = async () => {
+    setIsLoading(true);
+    try {
+      const usersList = await getAllUsers();
+      setUsers(usersList);
+    } catch (error) {
+      console.error('Failed to load users:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDeleteUser = (userId: string) => {
@@ -215,6 +229,32 @@ export default function AdminPanel() {
         {/* 사용자 관리 탭 */}
         {activeTab === 'users' && (
           <div>
+            {/* localStorage 제한 안내 */}
+            <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 rounded">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">⚠️</span>
+                <div className="flex-1">
+                  <h3 className="font-bold text-yellow-900 dark:text-yellow-200 mb-2">
+                    중요: 로컬 스토리지 사용 중
+                  </h3>
+                  <p className="text-sm text-yellow-800 dark:text-yellow-300 mb-2">
+                    현재 앱은 브라우저의 localStorage를 사용하고 있어, <strong>각 브라우저마다 독립적인 사용자 데이터</strong>를 저장합니다.
+                  </p>
+                  <ul className="text-sm text-yellow-800 dark:text-yellow-300 space-y-1 list-disc list-inside">
+                    <li>다른 사람이 자신의 브라우저에서 가입한 계정은 여기에 표시되지 않습니다</li>
+                    <li>같은 브라우저에서 가입한 사용자만 확인 가능합니다</li>
+                    <li>실제 다중 사용자 환경을 위해서는 백엔드 데이터베이스(Supabase 등)가 필요합니다</li>
+                  </ul>
+                  <button
+                    onClick={refreshUsers}
+                    className="mt-3 px-3 py-1.5 bg-yellow-600 hover:bg-yellow-700 text-white text-sm rounded font-medium"
+                  >
+                    🔄 사용자 목록 새로고침
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* 통계 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">

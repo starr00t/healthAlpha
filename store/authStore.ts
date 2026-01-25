@@ -14,7 +14,7 @@ interface AuthStore {
   upgradeToPremium: (tier: SubscriptionTier) => boolean;
   incrementAIUsage: () => boolean;
   canUseAI: () => boolean;
-  getAllUsers: () => StoredUser[];
+  getAllUsers: () => Promise<StoredUser[]>; // 비동기로 변경
   deleteUser: (userId: string) => boolean;
   updateUserAdmin: (userId: string, isAdmin: boolean) => boolean;
   updateUserSubscription: (userId: string, subscription: UserSubscription) => boolean;
@@ -92,7 +92,40 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
 
       login: async (email: string, password: string) => {
-        // 최신 사용자 정보를 가져옴 (관리자 Pro 구독 자동 추가 포함)
+        // 1. API 로그인 시도 (Upstash Redis)
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          });
+
+          if (response.ok) {
+            const { user } = await response.json();
+            set({
+              user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                createdAt: user.createdAt,
+                isAdmin: user.isAdmin || false,
+                profile: user.profile,
+                subscription: user.subscription,
+              },
+              isAuthenticated: true,
+            });
+            return true;
+          }
+          
+          // 503이면 Redis 미설정 - localStorage 폴백
+          if (response.status === 503) {
+            console.log('Falling back to localStorage authentication');
+          }
+        } catch (error) {
+          console.error('API login failed, falling back to localStorage:', error);
+        }
+
+        // 2. localStorage 폴백 (기존 로직)
         const users = getStoredUsers();
         const user = users.find((u) => u.email === email && u.password === password);
 
@@ -129,6 +162,40 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       register: async (email: string, password: string, name: string) => {
+        // 1. API 회원가입 시도 (Upstash Redis)
+        try {
+          const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, name }),
+          });
+
+          if (response.ok) {
+            const { user } = await response.json();
+            set({
+              user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                createdAt: user.createdAt,
+                isAdmin: user.isAdmin || false,
+                profile: user.profile,
+                subscription: user.subscription,
+              },
+              isAuthenticated: true,
+            });
+            return true;
+          }
+          
+          // 409면 이미 존재하는 이메일
+          if (response.status === 409) {
+            return false;
+          }
+        } catch (error) {
+          console.error('API registration failed, falling back to localStorage:', error);
+        }
+
+        // 2. localStorage 폴백 (기존 로직)
         const users = getStoredUsers();
         
         // 이미 존재하는 이메일 확인
@@ -307,7 +374,28 @@ export const useAuthStore = create<AuthStore>()(
         return used < limit;
       },
 
-      getAllUsers: () => {
+      getAllUsers: async () => {
+        const { user } = get();
+        
+        // 1. API로 사용자 목록 조회 시도 (관리자만)
+        if (user?.isAdmin) {
+          try {
+            const response = await fetch('/api/users', {
+              headers: {
+                'x-admin-email': user.email,
+              },
+            });
+
+            if (response.ok) {
+              const { users } = await response.json();
+              return users;
+            }
+          } catch (error) {
+            console.error('API getAllUsers failed, falling back to localStorage:', error);
+          }
+        }
+
+        // 2. localStorage 폴백
         return getStoredUsers();
       },
 
