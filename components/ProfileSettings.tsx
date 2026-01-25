@@ -3,12 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import { useHealthStore } from '@/store/healthStore';
 import { UserProfile, bodyTypeLabels, genderLabels, BodyType, Gender } from '@/types/user';
 
 export default function ProfileSettings() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const updateHealthProfile = useAuthStore((state) => state.updateHealthProfile);
+  
+  // 건강 데이터 동기화
+  const { syncEnabled, setSyncEnabled, syncToServer, syncFromServer, lastSyncTime, isSyncing } = useHealthStore();
 
   const [formData, setFormData] = useState<UserProfile>({
     height: user?.profile?.height,
@@ -105,6 +109,16 @@ export default function ProfileSettings() {
   const currentWeight = 70; // TODO: 최근 체중 데이터에서 가져오기
   const bmi = calculateBMI(currentWeight);
 
+  const handleSyncToggle = async () => {
+    const newSyncEnabled = !syncEnabled;
+    setSyncEnabled(newSyncEnabled);
+    
+    if (newSyncEnabled) {
+      // 동기화 활성화 시 서버로 즉시 업로드
+      await syncToServer();
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* 성공 메시지 */}
@@ -113,6 +127,75 @@ export default function ProfileSettings() {
           {successMessage}
         </div>
       )}
+
+      {/* 데이터 동기화 설정 */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+          ☁️ 데이터 동기화
+        </h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold text-gray-800 dark:text-white">
+                  자동 클라우드 동기화
+                </h4>
+                {syncEnabled && (
+                  <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-semibold rounded">
+                    활성화
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                건강 데이터를 서버에 자동으로 백업하고 다른 기기에서 동일한 데이터를 볼 수 있습니다
+              </p>
+              {lastSyncTime && (
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                  마지막 동기화: {new Date(lastSyncTime).toLocaleString('ko-KR')}
+                </p>
+              )}
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer ml-4">
+              <input
+                type="checkbox"
+                checked={syncEnabled}
+                onChange={handleSyncToggle}
+                className="sr-only peer"
+              />
+              <div className="w-14 h-7 bg-gray-300 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+
+          {syncEnabled && (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => syncFromServer()}
+                disabled={isSyncing}
+                className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                {isSyncing ? '동기화 중...' : '⬇️ 서버에서 다운로드'}
+              </button>
+              <button
+                type="button"
+                onClick={() => syncToServer()}
+                disabled={isSyncing}
+                className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                {isSyncing ? '동기화 중...' : '⬆️ 서버로 업로드'}
+              </button>
+            </div>
+          )}
+
+          {!syncEnabled && (
+            <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                ⚠️ 동기화가 비활성화되어 있습니다. 데이터는 이 기기에만 저장됩니다.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* 기본 정보 */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">

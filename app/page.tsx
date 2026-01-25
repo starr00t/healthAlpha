@@ -45,7 +45,7 @@ export default function Home() {
   // 사용자 로그인/로그아웃 시 데이터 동기화
   useEffect(() => {
     if (isAuthenticated && user) {
-      setUserId(user.id);
+      setUserId(user.id, user.email);
     } else {
       clearRecords();
     }

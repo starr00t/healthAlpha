@@ -5,7 +5,14 @@ import { HealthRecord } from '@/types/health';
 interface HealthStore {
   records: HealthRecord[];
   userId: string | null;
-  setUserId: (userId: string | null) => void;
+  userEmail: string | null;
+  syncEnabled: boolean;
+  isSyncing: boolean;
+  lastSyncTime: string | null;
+  setUserId: (userId: string | null, email?: string | null) => void;
+  setSyncEnabled: (enabled: boolean) => void;
+  syncToServer: () => Promise<void>;
+  syncFromServer: () => Promise<void>;
   addRecord: (record: Omit<HealthRecord, 'id'>) => void;
   updateRecord: (id: string, record: Partial<HealthRecord>) => void;
   deleteRecord: (id: string) => void;
@@ -34,14 +41,76 @@ export const useHealthStore = create<HealthStore>()(
     (set, get) => ({
       records: [],
       userId: null,
+      userEmail: null,
+      syncEnabled: true, // 기본값: 동기화 활성화
+      isSyncing: false,
+      lastSyncTime: null,
 
-      setUserId: (userId) => {
+      setUserId: async (userId, email = null) => {
         const records = loadUserRecords(userId);
-        set({ userId, records });
+        set({ userId, userEmail: email, records });
+        
+        // 로그인 시 서버에서 데이터 자동 다운로드
+        if (userId && email && get().syncEnabled) {
+          await get().syncFromServer();
+        }
+      },
+
+      setSyncEnabled: (enabled) => {
+        set({ syncEnabled: enabled });
+        if (enabled && get().userEmail) {
+          // 동기화 활성화 시 즉시 서버로 업로드
+          get().syncToServer();
+        }
+      },
+
+      // 서버로 데이터 업로드
+      syncToServer: async () => {
+        const { userEmail, records, syncEnabled, isSyncing } = get();
+        if (!syncEnabled || !userEmail || isSyncing) return;
+
+        set({ isSyncing: true });
+        try {
+          const response = await fetch('/api/health', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: userEmail, records }),
+          });
+
+          if (response.ok) {
+            set({ lastSyncTime: new Date().toISOString() });
+            console.log('✅ 서버 동기화 완료');
+          }
+        } catch (error) {
+          console.error('❌ 서버 동기화 실패:', error);
+        } finally {
+          set({ isSyncing: false });
+        }
+      },
+
+      // 서버에서 데이터 다운로드
+      syncFromServer: async () => {
+        const { userEmail, syncEnabled, userId } = get();
+        if (!syncEnabled || !userEmail) return;
+
+        try {
+          const response = await fetch(`/api/health?email=${encodeURIComponent(userEmail)}`);
+          
+          if (response.ok) {
+            const { records: serverRecords } = await response.json();
+            if (serverRecords && serverRecords.length > 0) {
+              set({ records: serverRecords, lastSyncTime: new Date().toISOString() });
+              saveUserRecords(userId, serverRecords);
+              console.log('✅ 서버 데이터 다운로드 완료:', serverRecords.length, '개');
+            }
+          }
+        } catch (error) {
+          console.error('❌ 서버 데이터 다운로드 실패:', error);
+        }
       },
 
       clearRecords: () => {
-        set({ records: [], userId: null });
+        set({ records: [], userId: null, userEmail: null });
       },
       
       addRecord: (record) => {
@@ -55,6 +124,11 @@ export const useHealthStore = create<HealthStore>()(
         );
         set({ records: updatedRecords });
         saveUserRecords(userId, updatedRecords);
+        
+        // 자동 동기화
+        if (get().syncEnabled) {
+          get().syncToServer();
+        }
       },
       
       updateRecord: (id, updatedData) => {
@@ -64,6 +138,11 @@ export const useHealthStore = create<HealthStore>()(
         );
         set({ records: updatedRecords });
         saveUserRecords(userId, updatedRecords);
+        
+        // 자동 동기화
+        if (get().syncEnabled) {
+          get().syncToServer();
+        }
       },
       
       deleteRecord: (id) => {
@@ -71,6 +150,11 @@ export const useHealthStore = create<HealthStore>()(
         const updatedRecords = get().records.filter((record) => record.id !== id);
         set({ records: updatedRecords });
         saveUserRecords(userId, updatedRecords);
+        
+        // 자동 동기화
+        if (get().syncEnabled) {
+          get().syncToServer();
+        }
       },
       
       getRecordsByDateRange: (startDate, endDate) => {
@@ -99,7 +183,12 @@ export const useHealthStore = create<HealthStore>()(
     }),
     {
       name: 'health-storage-state',
-      partialize: (state) => ({ userId: state.userId }),
+      partialize: (state) => ({ 
+        userId: state.userId,
+        userEmail: state.userEmail,
+        syncEnabled: state.syncEnabled,
+        lastSyncTime: state.lastSyncTime,
+      }),
     }
   )
 );
