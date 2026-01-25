@@ -2,7 +2,7 @@
 
 import { useAuthStore } from '@/store/authStore';
 import { useAdminStore } from '@/store/adminStore';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SubscriptionTier, subscriptionFeatures } from '@/types/user';
 
 interface StoredUser {
