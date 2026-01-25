@@ -14,6 +14,22 @@ interface TrendChartProps {
 export default function TrendChart({ metric, title, color }: TrendChartProps) {
   const records = useHealthStore((state) => state.records);
 
+  // 메트릭별 단위 결정
+  const getUnit = () => {
+    switch (metric) {
+      case 'weight':
+        return 'kg';
+      case 'bloodPressure':
+        return 'mmHg';
+      case 'bloodSugar':
+        return 'mg/dL';
+      default:
+        return '';
+    }
+  };
+
+  const unit = getUnit();
+
   const chartData = useMemo(() => {
     const last30Days = records.slice(0, 30);
     return prepareChartData(last30Days, metric);
@@ -26,9 +42,12 @@ export default function TrendChart({ metric, title, color }: TrendChartProps) {
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-bold mb-4 text-gray-800">{title}</h3>
-        <p className="text-gray-500 text-center py-8">데이터가 충분하지 않습니다</p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
+          {title}
+          <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">({unit})</span>
+        </h3>
+        <p className="text-gray-500 dark:text-gray-400 text-center py-8">데이터가 충분하지 않습니다</p>
       </div>
     );
   }
@@ -47,26 +66,29 @@ export default function TrendChart({ metric, title, color }: TrendChartProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold text-gray-800">{title}</h3>
+        <h3 className="text-xl font-bold text-gray-800 dark:text-white">
+          {title}
+          <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">({unit})</span>
+        </h3>
         <div className={`text-2xl ${getTrendColor()}`}>
           {getTrendIcon()} {stats.trend === 'up' ? '상승' : stats.trend === 'down' ? '하락' : '안정'}
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="text-center p-3 bg-gray-50 rounded">
-          <div className="text-sm text-gray-600">평균</div>
-          <div className="text-lg font-bold text-gray-800">{stats.average.toFixed(1)}</div>
+        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded">
+          <div className="text-sm text-gray-600 dark:text-gray-400">평균</div>
+          <div className="text-lg font-bold text-gray-800 dark:text-white">{stats.average.toFixed(1)}</div>
         </div>
-        <div className="text-center p-3 bg-gray-50 rounded">
-          <div className="text-sm text-gray-600">최소</div>
-          <div className="text-lg font-bold text-blue-600">{stats.min.toFixed(1)}</div>
+        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded">
+          <div className="text-sm text-gray-600 dark:text-gray-400">최소</div>
+          <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{stats.min.toFixed(1)}</div>
         </div>
-        <div className="text-center p-3 bg-gray-50 rounded">
-          <div className="text-sm text-gray-600">최대</div>
-          <div className="text-lg font-bold text-red-600">{stats.max.toFixed(1)}</div>
+        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded">
+          <div className="text-sm text-gray-600 dark:text-gray-400">최대</div>
+          <div className="text-lg font-bold text-red-600 dark:text-red-400">{stats.max.toFixed(1)}</div>
         </div>
       </div>
 
