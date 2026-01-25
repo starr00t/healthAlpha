@@ -471,21 +471,24 @@ export default function HealthCalendar() {
                   {latestRecord && (
                     <div className="w-full space-y-0.5 text-left mb-1">
                       {latestRecord.weight && (
-                        <div className="text-xs truncate">
+                        <div className="flex items-center gap-1 text-xs truncate">
+                          <span className="text-blue-600 dark:text-blue-400">⚖️</span>
                           <span className="text-blue-600 dark:text-blue-400 font-medium">
-                            {latestRecord.weight}kg
+                            {latestRecord.weight}
                           </span>
                         </div>
                       )}
                       {latestRecord.bloodPressure && (
-                        <div className="text-xs truncate">
+                        <div className="flex items-center gap-1 text-xs truncate">
+                          <span className="text-red-600 dark:text-red-400">🩸</span>
                           <span className="text-red-600 dark:text-red-400 font-medium">
                             {latestRecord.bloodPressure.systolic}/{latestRecord.bloodPressure.diastolic}
                           </span>
                         </div>
                       )}
                       {latestRecord.bloodSugar && (
-                        <div className="text-xs truncate">
+                        <div className="flex items-center gap-1 text-xs truncate">
+                          <span className="text-purple-600 dark:text-purple-400">🍬</span>
                           <span className="text-purple-600 dark:text-purple-400 font-medium">
                             {latestRecord.bloodSugar}
                           </span>
