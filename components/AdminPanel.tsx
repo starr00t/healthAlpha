@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useAdminStore } from '@/store/adminStore';
 import { useState, useEffect } from 'react';
 import { SubscriptionTier, subscriptionFeatures } from '@/types/user';
+import { getVersionInfo } from '@/lib/version';
 
 interface StoredUser {
   id: string;
@@ -185,12 +186,31 @@ export default function AdminPanel() {
   const premiumCount = users.filter((u: StoredUser) => u.subscription?.tier === 'premium').length;
   const proCount = users.filter((u: StoredUser) => u.subscription?.tier === 'pro').length;
 
+  // 버전 정보
+  const versionInfo = getVersionInfo();
+
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">
-          👑 관리자 패널
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+            👑 관리자 패널
+          </h2>
+          <div className="text-right">
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              버전: <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">v{versionInfo.version}</span>
+            </div>
+            <div className="text-xs text-gray-400 dark:text-gray-500">
+              빌드: {new Date(versionInfo.buildTime).toLocaleString('ko-KR', { 
+                year: 'numeric',
+                month: '2-digit', 
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </div>
+          </div>
+        </div>
 
         {/* 탭 메뉴 */}
         <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
