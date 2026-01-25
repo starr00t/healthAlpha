@@ -27,6 +27,12 @@ export default function Home() {
   const { setUserId, clearRecords } = useHealthStore();
   const { isDarkMode } = useThemeStore();
 
+  const handleLogout = () => {
+    if (confirm('로그아웃 하시겠습니까?')) {
+      logout();
+    }
+  };
+
   // 다크모드 적용
   useEffect(() => {
     if (isDarkMode) {
@@ -86,7 +92,7 @@ export default function Home() {
                 <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
               </div>
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="px-3 md:px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs md:text-sm font-medium transition-colors flex-shrink-0"
                 title="로그아웃"
               >
