@@ -19,6 +19,7 @@ interface AuthStore {
   updateUserAdmin: (userId: string, isAdmin: boolean) => boolean;
   updateUserSubscription: (userId: string, subscription: UserSubscription) => boolean;
   grantPremiumAccess: (userId: string, tier: SubscriptionTier, duration?: number) => boolean;
+  revokePremiumAccess: (userId: string) => boolean;
 }
 
 // 간단한 사용자 저장소 (실제 프록덕션에서는 백엔드 API 사용)
@@ -463,6 +464,18 @@ export const useAuthStore = create<AuthStore>()(
         };
 
         return get().updateUserSubscription(userId, newSubscription);
+      },
+
+      revokePremiumAccess: (userId: string) => {
+        const defaultSubscription: UserSubscription = {
+          tier: 'free',
+          status: 'active',
+          startDate: new Date().toISOString(),
+          aiRequestsUsed: 0,
+          aiRequestsLimit: 5,
+        };
+
+        return get().updateUserSubscription(userId, defaultSubscription);
       },
     }),
     {

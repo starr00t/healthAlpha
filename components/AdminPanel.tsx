@@ -18,7 +18,7 @@ interface StoredUser {
 type TabType = 'users' | 'settings' | 'subscriptions';
 
 export default function AdminPanel() {
-  const { user, getAllUsers, deleteUser, updateUserAdmin, grantPremiumAccess } = useAuthStore();
+  const { user, getAllUsers, deleteUser, updateUserAdmin, grantPremiumAccess, revokePremiumAccess } = useAuthStore();
   const { settings, updateSettings, hasApiKey } = useAdminStore();
   const [users, setUsers] = useState<StoredUser[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -138,6 +138,14 @@ export default function AdminPanel() {
       setShowModal(false);
       setSelectedUser(null);
       refreshUsers();
+    }
+  };
+
+  const handleRevokeAccess = (userId: string, userName: string) => {
+    if (confirm(`${userName}님의 프리미엄 권한을 제거하고 Free 등급으로 되돌리시겠습니까?`)) {
+      if (revokePremiumAccess(userId)) {
+        refreshUsers();
+      }
     }
   };
 
@@ -419,7 +427,6 @@ export default function AdminPanel() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">상태</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">AI 사용</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">만료일</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">작업</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
@@ -440,17 +447,6 @@ export default function AdminPanel() {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                         {formatDate(u.subscription?.endDate)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => {
-                            setSelectedUser(u);
-                            setShowModal(true);
-                          }}
-                          className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
-                        >
-                          권한 부여
-                        </button>
                       </td>
                     </tr>
                   ))}
