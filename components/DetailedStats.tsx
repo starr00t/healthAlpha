@@ -78,7 +78,10 @@ export default function DetailedStats() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <span className="text-2xl">{icon}</span>
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{title}</h3>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+              {title}
+              <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">({unit})</span>
+            </h3>
           </div>
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${badge.color}`}>
             {badge.icon} {badge.text}
@@ -88,23 +91,20 @@ export default function DetailedStats() {
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded">
             <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">평균</div>
-            <div className="text-xl font-bold text-gray-800 dark:text-white">
+            <div className="text-2xl font-bold text-gray-800 dark:text-white">
               {stats.average.toFixed(1)}
-              <span className="text-sm font-normal ml-1">{unit}</span>
             </div>
           </div>
           <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
             <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">최소</div>
-            <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {stats.min.toFixed(1)}
-              <span className="text-sm font-normal ml-1">{unit}</span>
             </div>
           </div>
           <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded">
             <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">최대</div>
-            <div className="text-xl font-bold text-red-600 dark:text-red-400">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
               {stats.max.toFixed(1)}
-              <span className="text-sm font-normal ml-1">{unit}</span>
             </div>
           </div>
         </div>

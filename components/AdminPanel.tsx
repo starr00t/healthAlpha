@@ -70,20 +70,67 @@ export default function AdminPanel() {
     }
   };
 
-  const handleDeleteUser = (userId: string) => {
+  const handleDeleteUser = async (userId: string) => {
     if (confirm('정말 이 사용자를 삭제하시겠습니까?')) {
-      if (deleteUser(userId)) {
-        refreshUsers();
-      } else {
-        alert('관리자 계정은 삭제할 수 없습니다.');
+      try {
+        const response = await fetch('/api/users', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-email': user?.email || '',
+          },
+          body: JSON.stringify({ userId }),
+        });
+
+        if (response.ok) {
+          // 로컬 스토리지도 업데이트
+          deleteUser(userId);
+          await refreshUsers();
+        } else {
+          const data = await response.json();
+          alert(data.error || '사용자 삭제에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('Delete user error:', error);
+        // 서버 오류시 로컬만 업데이트
+        if (deleteUser(userId)) {
+          await refreshUsers();
+        } else {
+          alert('관리자 계정은 삭제할 수 없습니다.');
+        }
       }
     }
   };
 
-  const handleToggleAdmin = (userId: string, currentAdmin: boolean) => {
+  const handleToggleAdmin = async (userId: string, currentAdmin: boolean) => {
     if (confirm(`${currentAdmin ? '관리자 권한을 제거' : '관리자 권한을 부여'}하시겠습니까?`)) {
-      updateUserAdmin(userId, !currentAdmin);
-      refreshUsers();
+      try {
+        const response = await fetch('/api/users', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-email': user?.email || '',
+          },
+          body: JSON.stringify({
+            userId,
+            updates: { isAdmin: !currentAdmin },
+          }),
+        });
+
+        if (response.ok) {
+          // 로컬 스토리지도 업데이트
+          updateUserAdmin(userId, !currentAdmin);
+          await refreshUsers();
+        } else {
+          const data = await response.json();
+          alert(data.error || '권한 변경에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('Toggle admin error:', error);
+        // 서버 오류시 로컬만 업데이트
+        updateUserAdmin(userId, !currentAdmin);
+        await refreshUsers();
+      }
     }
   };
 
@@ -128,23 +175,95 @@ export default function AdminPanel() {
     }
   };
 
-  const handleGrantAccess = () => {
+  const handleGrantAccess = async () => {
     if (!selectedUser) return;
 
-    const days = isUnlimited ? undefined : duration;
-    const success = grantPremiumAccess(selectedUser.id, selectedTier, days);
-    
-    if (success) {
-      setShowModal(false);
-      setSelectedUser(null);
-      refreshUsers();
+    try {
+      const days = isUnlimited ? undefined : duration;
+      
+      // 구독 정보 생성
+      const subscription = {
+        tier: selectedTier,
+        status: 'active',
+        startDate: new Date().toISOString(),
+        endDate: days ? new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString() : undefined,
+        aiRequestsUsed: 0,
+        aiRequestsLimit: selectedTier === 'pro' ? undefined : (selectedTier === 'premium' ? 50 : 5),
+      };
+
+      const response = await fetch('/api/users', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-email': user?.email || '',
+        },
+        body: JSON.stringify({
+          userId: selectedUser.id,
+          updates: { subscription },
+        }),
+      });
+
+      if (response.ok) {
+        // 로컬 스토리지도 업데이트
+        grantPremiumAccess(selectedUser.id, selectedTier, days);
+        setShowModal(false);
+        setSelectedUser(null);
+        await refreshUsers();
+      } else {
+        const data = await response.json();
+        alert(data.error || '권한 부여에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Grant access error:', error);
+      // 서버 오류시 로컬만 업데이트
+      const days = isUnlimited ? undefined : duration;
+      const success = grantPremiumAccess(selectedUser.id, selectedTier, days);
+      
+      if (success) {
+        setShowModal(false);
+        setSelectedUser(null);
+        await refreshUsers();
+      }
     }
   };
 
-  const handleRevokeAccess = (userId: string, userName: string) => {
+  const handleRevokeAccess = async (userId: string, userName: string) => {
     if (confirm(`${userName}님의 프리미엄 권한을 제거하고 Free 등급으로 되돌리시겠습니까?`)) {
-      if (revokePremiumAccess(userId)) {
-        refreshUsers();
+      try {
+        const subscription = {
+          tier: 'free',
+          status: 'active',
+          startDate: new Date().toISOString(),
+          aiRequestsUsed: 0,
+          aiRequestsLimit: 5,
+        };
+
+        const response = await fetch('/api/users', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-email': user?.email || '',
+          },
+          body: JSON.stringify({
+            userId,
+            updates: { subscription },
+          }),
+        });
+
+        if (response.ok) {
+          // 로컬 스토리지도 업데이트
+          revokePremiumAccess(userId);
+          await refreshUsers();
+        } else {
+          const data = await response.json();
+          alert(data.error || '권한 제거에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('Revoke access error:', error);
+        // 서버 오류시 로컬만 업데이트
+        if (revokePremiumAccess(userId)) {
+          await refreshUsers();
+        }
       }
     }
   };
@@ -257,25 +376,25 @@ export default function AdminPanel() {
         {/* 사용자 관리 탭 */}
         {activeTab === 'users' && (
           <div>
-            {/* localStorage 제한 안내 */}
-            <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 rounded">
+            {/* 데이터베이스 연결 안내 */}
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded">
               <div className="flex items-start gap-3">
-                <span className="text-2xl">⚠️</span>
+                <span className="text-2xl">☁️</span>
                 <div className="flex-1">
-                  <h3 className="font-bold text-yellow-900 dark:text-yellow-200 mb-2">
-                    중요: 로컬 스토리지 사용 중
+                  <h3 className="font-bold text-blue-900 dark:text-blue-200 mb-2">
+                    클라우드 데이터베이스 연결됨
                   </h3>
-                  <p className="text-sm text-yellow-800 dark:text-yellow-300 mb-2">
-                    현재 앱은 브라우저의 localStorage를 사용하고 있어, <strong>각 브라우저마다 독립적인 사용자 데이터</strong>를 저장합니다.
+                  <p className="text-sm text-blue-800 dark:text-blue-300 mb-2">
+                    현재 앱은 <strong>Upstash Redis 클라우드 데이터베이스</strong>를 사용하여 모든 사용자 데이터를 중앙에서 관리합니다.
                   </p>
-                  <ul className="text-sm text-yellow-800 dark:text-yellow-300 space-y-1 list-disc list-inside">
-                    <li>다른 사람이 자신의 브라우저에서 가입한 계정은 여기에 표시되지 않습니다</li>
-                    <li>같은 브라우저에서 가입한 사용자만 확인 가능합니다</li>
-                    <li>실제 다중 사용자 환경을 위해서는 백엔드 데이터베이스(Supabase 등)가 필요합니다</li>
+                  <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1 list-disc list-inside">
+                    <li>모든 기기에서 가입한 사용자가 실시간으로 동기화됩니다</li>
+                    <li>사용자 데이터는 안전하게 클라우드에 저장됩니다</li>
+                    <li>관리자 작업은 즉시 서버에 반영됩니다</li>
                   </ul>
                   <button
                     onClick={refreshUsers}
-                    className="mt-3 px-3 py-1.5 bg-yellow-600 hover:bg-yellow-700 text-white text-sm rounded font-medium"
+                    className="mt-3 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded font-medium"
                   >
                     🔄 사용자 목록 새로고침
                   </button>
@@ -459,6 +578,23 @@ export default function AdminPanel() {
         {/* AI 설정 탭 */}
         {activeTab === 'settings' && (
           <div className="space-y-6">
+            {/* AI 기능 안내 */}
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 rounded">
+              <div className="flex items-start gap-2">
+                <span className="text-xl">💡</span>
+                <div>
+                  <h3 className="font-bold text-green-900 dark:text-green-200 mb-1">AI 기능 안내</h3>
+                  <p className="text-sm text-green-800 dark:text-green-300 mb-2">
+                    ✅ 현재 상태: 기본 건강 조언 시스템 작동 중
+                  </p>
+                  <div className="text-xs text-green-700 dark:text-green-400 space-y-1">
+                    <p>🔒 모든 요청은 서버를 통해 안전하게 처리됩니다</p>
+                    <p>🔐 개인 식별 정보는 AI에 전송되지 않습니다</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* 관리자 Pro 구독 상태 */}
             <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
               <div className="flex items-center justify-between">

@@ -348,9 +348,9 @@ export default function HealthCalendar() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white">건강 캘린더</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-2 md:p-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">건강 캘린더</h2>
           <div className="flex gap-2">
             {/* 보기 모드 전환 */}
             <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-1 flex gap-1">
@@ -385,7 +385,7 @@ export default function HealthCalendar() {
         </div>
 
         {/* 네비게이션 */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-3 md:mb-4">
           <button
             onClick={previousPeriod}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -410,11 +410,11 @@ export default function HealthCalendar() {
         </div>
 
         {/* 요일 헤더 */}
-        <div className="grid grid-cols-7 gap-2 mb-2">
+        <div className="grid grid-cols-7 gap-0.5 mb-1">
           {['일', '월', '화', '수', '목', '금', '토'].map((day, index) => (
             <div
               key={day}
-              className={`text-center font-semibold text-sm py-2 ${
+              className={`text-center font-semibold text-xs md:text-sm py-1 ${
                 index === 0 ? 'text-red-600 dark:text-red-400' : 
                 index === 6 ? 'text-blue-600 dark:text-blue-400' : 
                 'text-gray-700 dark:text-gray-300'
@@ -426,7 +426,7 @@ export default function HealthCalendar() {
         </div>
 
         {/* 캘린더 그리드 */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-0.5">
           {calendarDays.map((date, index) => {
             const dateHasRecords = hasRecords(date);
             const dateIsToday = isToday(date);
@@ -816,31 +816,31 @@ export default function HealthCalendar() {
           {/* 건강 기록 */}
           {selectedDateRecords.length > 0 && (
             <div className="mb-6">
-              <h4 className="text-lg font-bold text-gray-800 dark:text-white mb-3">건강 기록</h4>
-              <div className="space-y-3">
+              <h4 className="text-base md:text-lg font-bold text-gray-800 dark:text-white mb-2 md:mb-3">건강 기록</h4>
+              <div className="space-y-2 md:space-y-3">
                 {selectedDateRecords.map((record) => (
                   <div
                     key={record.id}
-                    className="border border-gray-200 dark:border-gray-600 rounded-lg p-4"
+                    className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 md:p-4"
                   >
-                    <div className="flex flex-wrap gap-3">
+                    <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-3">
                       {record.weight && (
-                        <div className="bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded">
-                          <div className="text-xs text-gray-600 dark:text-gray-400">체중</div>
-                          <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                            {record.weight} kg
+                        <div className="bg-blue-50 dark:bg-blue-900/20 px-2 md:px-3 py-1.5 md:py-2 rounded">
+                          <div className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">체중</div>
+                          <div className="text-base md:text-lg font-bold text-blue-600 dark:text-blue-400">
+                            {record.weight} <span className="text-xs md:text-sm font-normal">kg</span>
                           </div>
                         </div>
                       )}
 
                       {record.bloodPressure && (
-                        <div className="bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded">
-                          <div className="text-xs text-gray-600 dark:text-gray-400">혈압</div>
-                          <div className="text-lg font-bold text-red-600 dark:text-red-400">
+                        <div className="bg-red-50 dark:bg-red-900/20 px-2 md:px-3 py-1.5 md:py-2 rounded">
+                          <div className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">혈압</div>
+                          <div className="text-base md:text-lg font-bold text-red-600 dark:text-red-400">
                             {record.bloodPressure.systolic}/{record.bloodPressure.diastolic}
                           </div>
                           {record.bloodPressure.heartRate && (
-                            <div className="text-xs text-gray-700 dark:text-gray-300 mt-1">
+                            <div className="text-[10px] md:text-xs text-gray-700 dark:text-gray-300 mt-0.5 md:mt-1">
                               ❤️ {record.bloodPressure.heartRate} bpm
                             </div>
                           )}
@@ -848,17 +848,17 @@ export default function HealthCalendar() {
                       )}
 
                       {record.bloodSugar && (
-                        <div className="bg-purple-50 dark:bg-purple-900/20 px-3 py-2 rounded">
-                          <div className="text-xs text-gray-600 dark:text-gray-400">혈당</div>
-                          <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                            {record.bloodSugar} mg/dL
+                        <div className="bg-purple-50 dark:bg-purple-900/20 px-2 md:px-3 py-1.5 md:py-2 rounded">
+                          <div className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">혈당</div>
+                          <div className="text-base md:text-lg font-bold text-purple-600 dark:text-purple-400">
+                            {record.bloodSugar} <span className="text-xs md:text-sm font-normal">mg/dL</span>
                           </div>
                         </div>
                       )}
                     </div>
 
                     {record.notes && (
-                      <div className="mt-3 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                      <div className="mt-2 md:mt-3 text-xs md:text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-2 rounded">
                         <strong>메모:</strong> {record.notes}
                       </div>
                     )}
