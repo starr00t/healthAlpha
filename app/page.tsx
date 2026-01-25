@@ -15,13 +15,14 @@ import EditableRecordsList from '@/components/EditableRecordsList';
 import HealthCalendar from '@/components/HealthCalendar';
 import AIHealthAdvisor from '@/components/AIHealthAdvisor';
 import ProfileSettings from '@/components/ProfileSettings';
+import HelpPanel from '@/components/HelpPanel';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useHealthStore } from '@/store/healthStore';
 import { useThemeStore } from '@/store/themeStore';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'record' | 'calendar' | 'trends' | 'stats' | 'goals' | 'manage' | 'profile' | 'ai' | 'admin'>('record');
+  const [activeTab, setActiveTab] = useState<'record' | 'calendar' | 'trends' | 'stats' | 'goals' | 'manage' | 'profile' | 'ai' | 'help' | 'admin'>('record');
   const { isAuthenticated, user } = useAuthStore();
   const { setUserId, clearRecords } = useHealthStore();
   const { isDarkMode } = useThemeStore();
@@ -51,38 +52,41 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-4 md:py-8 max-w-7xl">
         {/* 헤더 */}
-        <header className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-              Health Alpha
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              매일의 건강을 기록하고 관리하세요
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
+        <header className="mb-6 md:mb-8">
+          {/* 상단: 타이틀과 테마 토글 */}
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-4xl font-bold text-gray-900 dark:text-white mb-1 md:mb-2">
+                Health Alpha
+              </h1>
+              <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
+                매일의 건강을 기록하고 관리하세요
+              </p>
+            </div>
             <ThemeToggle />
-            {user && (
-              <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-sm">
-                <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center text-lg font-bold text-primary-600 dark:text-primary-400">
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {user.name}
-                    {user.isAdmin && (
-                      <span className="ml-2 px-2 py-0.5 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full">
-                        관리자
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
-                </div>
-              </div>
-            )}
           </div>
+          
+          {/* 하단: 사용자 프로필 */}
+          {user && (
+            <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-3 md:px-4 py-2 md:py-3 rounded-lg shadow-sm">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center text-base md:text-lg font-bold text-primary-600 dark:text-primary-400 flex-shrink-0">
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm md:text-base text-gray-900 dark:text-white truncate">
+                  {user.name}
+                  {user.isAdmin && (
+                    <span className="ml-2 px-2 py-0.5 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full">
+                      관리자
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+              </div>
+            </div>
+          )}
         </header>
 
         {/* 탭 네비게이션 */}
@@ -169,6 +173,16 @@ export default function Home() {
               >
                 🤖 AI 조언
               </button>
+              <button
+                onClick={() => setActiveTab('help')}
+                className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'help'
+                    ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                📖 도움말
+              </button>
               {user?.isAdmin && (
                 <button
                   onClick={() => setActiveTab('admin')}
@@ -246,6 +260,12 @@ export default function Home() {
         {activeTab === 'ai' && (
           <div className="max-w-4xl mx-auto">
             <AIHealthAdvisor />
+          </div>
+        )}
+
+        {activeTab === 'help' && (
+          <div className="max-w-5xl mx-auto">
+            <HelpPanel />
           </div>
         )}
 
