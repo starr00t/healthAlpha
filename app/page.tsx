@@ -23,7 +23,7 @@ import { useThemeStore } from '@/store/themeStore';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'record' | 'calendar' | 'trends' | 'stats' | 'goals' | 'manage' | 'profile' | 'ai' | 'help' | 'admin'>('record');
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, logout } = useAuthStore();
   const { setUserId, clearRecords } = useHealthStore();
   const { isDarkMode } = useThemeStore();
 
@@ -70,7 +70,7 @@ export default function Home() {
           
           {/* 하단: 사용자 프로필 */}
           {user && (
-            <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-3 md:px-4 py-2 md:py-3 rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 md:gap-3 bg-white dark:bg-gray-800 px-3 md:px-4 py-2 md:py-3 rounded-lg shadow-sm">
               <div className="w-10 h-10 md:w-12 md:h-12 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center text-base md:text-lg font-bold text-primary-600 dark:text-primary-400 flex-shrink-0">
                 {user.name.charAt(0).toUpperCase()}
               </div>
@@ -85,6 +85,13 @@ export default function Home() {
                 </p>
                 <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
               </div>
+              <button
+                onClick={logout}
+                className="px-3 md:px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs md:text-sm font-medium transition-colors flex-shrink-0"
+                title="로그아웃"
+              >
+                🚪 <span className="hidden sm:inline">로그아웃</span>
+              </button>
             </div>
           )}
         </header>
