@@ -13,6 +13,7 @@ interface DiaryDetailModalProps {
 export default function DiaryDetailModal({ diary, onClose, onEdit }: DiaryDetailModalProps) {
   const deleteDiary = useCalendarStore((state) => state.deleteDiary);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'visual' | 'markdown'>('visual');
 
   const handleDelete = () => {
     if (confirm('다이어리를 삭제하시겠습니까?')) {
@@ -22,10 +23,48 @@ export default function DiaryDetailModal({ diary, onClose, onEdit }: DiaryDetail
   };
 
   const fontFamilies = {
-    default: 'sans-serif',
-    serif: 'Georgia, serif',
-    mono: 'monospace',
-    cursive: 'cursive',
+    default: `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
+    serif: `"Noto Serif KR", Georgia, "Times New Roman", serif`,
+    mono: `"Fira Code", "Consolas", "Monaco", "Courier New", monospace`,
+    cursive: `"Nanum Pen Script", "Caveat", cursive`,
+    gothic: `"Noto Sans KR", "Malgun Gothic", sans-serif`,
+    myeongjo: `"Noto Serif KR", "Batang", serif`,
+  };
+
+  // 마크다운을 HTML로 변환
+  const markdownToHtml = (markdown: string): string => {
+    let html = markdown;
+    
+    // 제목
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    
+    // 굵게
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    
+    // 기울임
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    
+    // 취소선
+    html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
+    
+    // 인라인 코드
+    html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+    
+    // 인용구
+    html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+    
+    // 글머리 기호
+    html = html.replace(/^• (.+)$/gm, '<li>$1</li>');
+    
+    // 번호 매기기
+    html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+    
+    // 줄바꿈
+    html = html.replace(/\n/g, '<br />');
+    
+    return html;
   };
 
   const formattedDate = new Date(diary.date + 'T00:00:00.000Z').toLocaleDateString('ko-KR', {
@@ -59,6 +98,13 @@ export default function DiaryDetailModal({ diary, onClose, onEdit }: DiaryDetail
             </div>
             <div className="flex gap-2">
               <button
+                onClick={() => setViewMode(viewMode === 'visual' ? 'markdown' : 'visual')}
+                className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors text-sm"
+                title={viewMode === 'visual' ? '마크다운 보기' : '일반 보기'}
+              >
+                {viewMode === 'visual' ? '🔤 마크다운' : '👁️ 일반'}
+              </button>
+              <button
                 onClick={onEdit}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
@@ -82,17 +128,27 @@ export default function DiaryDetailModal({ diary, onClose, onEdit }: DiaryDetail
           {/* 본문 */}
           <div className="p-6 space-y-6">
             {/* 다이어리 내용 */}
-            <div 
-              className="prose prose-lg dark:prose-invert max-w-none p-6 bg-gray-50 dark:bg-gray-900/50 rounded-lg"
-              style={{
-                fontSize: diary.fontSize ? `${diary.fontSize}px` : '16px',
-                fontFamily: diary.fontFamily ? fontFamilies[diary.fontFamily as keyof typeof fontFamilies] : 'sans-serif',
-                lineHeight: '1.8',
-                whiteSpace: 'pre-wrap',
-              }}
-            >
-              {diary.content}
-            </div>
+            {viewMode === 'visual' ? (
+              <div 
+                className="prose prose-lg dark:prose-invert max-w-none p-6 bg-gray-50 dark:bg-gray-900/50 rounded-lg"
+                style={{
+                  fontSize: diary.fontSize ? `${diary.fontSize}px` : '16px',
+                  fontFamily: diary.fontFamily ? fontFamilies[diary.fontFamily as keyof typeof fontFamilies] : fontFamilies.default,
+                  lineHeight: '1.8',
+                }}
+                dangerouslySetInnerHTML={{ __html: markdownToHtml(diary.content) }}
+              />
+            ) : (
+              <div 
+                className="p-6 bg-gray-50 dark:bg-gray-900/50 rounded-lg font-mono text-sm"
+                style={{
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: '1.6',
+                }}
+              >
+                {diary.content}
+              </div>
+            )}
 
             {/* 사진 갤러리 */}
             {diary.photos && diary.photos.length > 0 && (

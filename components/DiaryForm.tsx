@@ -34,9 +34,10 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
   const [fullScreenMode, setFullScreenMode] = useState(false);
   const [fontSize, setFontSize] = useState(existingDiary?.fontSize || 16);
   const [fontFamily, setFontFamily] = useState(existingDiary?.fontFamily || 'default');
-  const [showPreview, setShowPreview] = useState(false);
+  const [editorMode, setEditorMode] = useState<'visual' | 'markdown'>('visual'); // 'visual' 또는 'markdown'
   const [wordCount, setWordCount] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const contentEditableRef = useRef<HTMLDivElement>(null);
   
   const [formData, setFormData] = useState({
     mood: existingDiary?.mood || '' as any,
@@ -97,7 +98,166 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
     }));
   };
 
+  // 비주얼 모드에서 서식 적용
+  const applyFormatVisual = (command: string, value?: string) => {
+    document.execCommand(command, false, value);
+    if (contentEditableRef.current) {
+      const html = contentEditableRef.current.innerHTML;
+      const markdown = htmlToMarkdown(html);
+      setFormData({ ...formData, content: markdown });
+    }
+  };
+
+  // HTML을 마크다운으로 변환
+  const htmlToMarkdown = (html: string): string => {
+    let markdown = html;
+    
+    // 제목
+    markdown = markdown.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n');
+    markdown = markdown.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n');
+    markdown = markdown.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n');
+    
+    // 굵게
+    markdown = markdown.replace(/<(?:strong|b)[^>]*>(.*?)<\/(?:strong|b)>/gi, '**$1**');
+    
+    // 기울임
+    markdown = markdown.replace(/<(?:em|i)[^>]*>(.*?)<\/(?:em|i)>/gi, '*$1*');
+    
+    // 취소선
+    markdown = markdown.replace(/<(?:del|s|strike)[^>]*>(.*?)<\/(?:del|s|strike)>/gi, '~~$1~~');
+    
+    // 인라인 코드
+    markdown = markdown.replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`');
+    
+    // 인용구
+    markdown = markdown.replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '> $1\n');
+    
+    // 목록
+    markdown = markdown.replace(/<li[^>]*>(.*?)<\/li>/gi, '• $1\n');
+    
+    // 줄바꿈 및 HTML 태그 제거
+    markdown = markdown.replace(/<br\s*\/?>/gi, '\n');
+    markdown = markdown.replace(/<div[^>]*>/gi, '\n');
+    markdown = markdown.replace(/<\/div>/gi, '');
+    markdown = markdown.replace(/<p[^>]*>/gi, '');
+    markdown = markdown.replace(/<\/p>/gi, '\n');
+    markdown = markdown.replace(/<[^>]+>/g, '');
+    
+    // HTML 엔티티 디코딩
+    markdown = markdown.replace(/&nbsp;/g, ' ');
+    markdown = markdown.replace(/&lt;/g, '<');
+    markdown = markdown.replace(/&gt;/g, '>');
+    markdown = markdown.replace(/&amp;/g, '&');
+    
+    return markdown.trim();
+  };
+
+  // 마크다운을 HTML로 변환
+  const markdownToHtml = (markdown: string): string => {
+    let html = markdown;
+    
+    // 제목
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    
+    // 굵게
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    
+    // 기울임
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    
+    // 취소선
+    html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
+    
+    // 인라인 코드
+    html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+    
+    // 인용구
+    html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+    
+    // 글머리 기호
+    html = html.replace(/^• (.+)$/gm, '<li>$1</li>');
+    
+    // 번호 매기기
+    html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+    
+    // 줄바꿈
+    html = html.replace(/\n/g, '<br />');
+    
+    return html;
+  };
+
+  // contentEditable 내용이 변경될 때
+  const handleContentEditableInput = (e: React.FormEvent<HTMLDivElement>) => {
+    // 현재 커서 위치 저장
+    const selection = window.getSelection();
+    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    const cursorOffset = range ? range.startOffset : 0;
+    const cursorNode = range ? range.startContainer : null;
+    
+    const html = e.currentTarget.innerHTML;
+    const markdown = htmlToMarkdown(html);
+    
+    // 마크다운이 실제로 변경되었을 때만 상태 업데이트
+    if (markdown !== formData.content) {
+      setFormData(prev => ({ ...prev, content: markdown }));
+      
+      // 커서 위치 복원
+      setTimeout(() => {
+        if (cursorNode && range && contentEditableRef.current) {
+          try {
+            const newRange = document.createRange();
+            newRange.setStart(cursorNode, Math.min(cursorOffset, cursorNode.textContent?.length || 0));
+            newRange.collapse(true);
+            selection?.removeAllRanges();
+            selection?.addRange(newRange);
+          } catch (e) {
+            // 커서 복원 실패 시 무시
+          }
+        }
+      }, 0);
+    }
+  };
+
+  // 비주얼 모드로 전환할 때 마크다운을 HTML로 변환
+  useEffect(() => {
+    if (editorMode === 'visual' && contentEditableRef.current) {
+      const currentHtml = contentEditableRef.current.innerHTML;
+      const expectedHtml = markdownToHtml(formData.content);
+      
+      // 포커스가 없고 내용이 비어있거나 다를 때만 업데이트
+      const isEmpty = !currentHtml || currentHtml === '<br>' || currentHtml.trim() === '';
+      const isDifferent = currentHtml !== expectedHtml;
+      
+      if (document.activeElement !== contentEditableRef.current && (isEmpty || isDifferent)) {
+        contentEditableRef.current.innerHTML = expectedHtml || '';
+      }
+    }
+  }, [editorMode, formData.content]); // formData.content 다시 추가하되 조건을 개선
+
   const insertText = (before: string, after: string = '', newLine: boolean = false) => {
+    if (editorMode === 'visual') {
+      // 비주얼 모드에서는 execCommand 사용
+      if (before === '**') applyFormatVisual('bold');
+      else if (before === '*') applyFormatVisual('italic');
+      else if (before === '~~') applyFormatVisual('strikeThrough');
+      else if (before === '# ') applyFormatVisual('formatBlock', 'h1');
+      else if (before === '## ') applyFormatVisual('formatBlock', 'h2');
+      else if (before === '### ') applyFormatVisual('formatBlock', 'h3');
+      else if (before === '• ') applyFormatVisual('insertUnorderedList');
+      else if (before === '1. ') applyFormatVisual('insertOrderedList');
+      else if (before === '> ') {
+        applyFormatVisual('formatBlock', 'blockquote');
+      } else {
+        // 기타 텍스트 삽입
+        document.execCommand('insertText', false, before + after);
+        handleContentEditableInput({ currentTarget: contentEditableRef.current } as any);
+      }
+      return;
+    }
+
+    // 마크다운 모드
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -202,10 +362,10 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setShowPreview(!showPreview)}
-                className="px-3 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 text-sm"
+                onClick={() => setEditorMode(editorMode === 'visual' ? 'markdown' : 'visual')}
+                className="px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 text-sm"
               >
-                {showPreview ? '✏️ 편집' : '👁️ 미리보기'}
+                {editorMode === 'visual' ? '📝 마크다운 모드' : '✨ 일반 모드'}
               </button>
               <button
                 type="button"
@@ -218,10 +378,14 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
           </div>
 
           {/* 도구 모음 */}
-          {!showPreview && (
-            <div className="space-y-2">
-              {/* 첫 번째 줄: 폰트 설정 */}
-              <div className="flex flex-wrap gap-2 items-center pb-2 border-b border-gray-200 dark:border-gray-700">
+          <div className="space-y-2">
+            {/* 첫 번째 줄: 모드 표시 및 폰트 설정 */}
+            <div className="flex flex-wrap gap-2 items-center pb-2 border-b border-gray-200 dark:border-gray-700">
+              <div className="px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg text-xs md:text-sm font-medium">
+                {editorMode === 'visual' ? '✨ 일반 모드 (서식 자동 적용)' : '📝 마크다운 모드 (개발자)'}
+              </div>
+              
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
                 <div className="flex items-center gap-2">
                   <label className="text-xs md:text-sm text-gray-600 dark:text-gray-400">크기:</label>
                   <select
@@ -412,7 +576,6 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
                 ))}
               </div>
             </div>
-          )}
         </div>
 
         {/* 콘텐츠 영역 */}
@@ -437,44 +600,44 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
               ))}
             </div>
 
-            {/* 본문 작성 또는 미리보기 */}
-            {showPreview ? (
-              <div 
-                className="w-full min-h-[60vh] p-4 md:p-6 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 prose dark:prose-invert max-w-none"
-                style={{
-                  fontSize: `${fontSize}px`,
-                  fontFamily: fontFamilies[fontFamily as keyof typeof fontFamilies],
-                  lineHeight: '1.8',
-                }}
-              >
-                {formData.content ? (
-                  <div
-                    dangerouslySetInnerHTML={{
-                      __html: formData.content
-                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                        .replace(/~~(.+?)~~/g, '<del>$1</del>')
-                        .replace(/`(.+?)`/g, '<code>$1</code>')
-                        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-                        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-                        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-                        .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-                        .replace(/^• (.+)$/gm, '<li>$1</li>')
-                        .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
-                        .replace(/\n/g, '<br />')
-                    }}
-                  />
-                ) : (
-                  <p className="text-gray-400">미리보기할 내용이 없습니다.</p>
+            {/* 본문 작성 - 모드에 따라 다른 에디터 표시 */}
+            {editorMode === 'visual' ? (
+              <div className="relative">
+                {!formData.content && (
+                  <div className="absolute top-4 left-6 text-gray-400 dark:text-gray-500 pointer-events-none" style={{ fontSize: `${fontSize}px` }}>
+                    오늘 하루는 어땠나요? 자유롭게 기록해보세요...<br />
+                    <span className="text-sm">💡 상단 버튼으로 굵게, 기울임, 제목 등을 적용할 수 있어요</span>
+                  </div>
                 )}
+                <div
+                  ref={contentEditableRef}
+                  contentEditable
+                  onInput={handleContentEditableInput}
+                  className="w-full min-h-[60vh] p-4 md:p-6 border-2 border-primary-300 dark:border-primary-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white overflow-auto"
+                  style={{
+                    fontSize: `${fontSize}px`,
+                    fontFamily: fontFamilies[fontFamily as keyof typeof fontFamilies],
+                    lineHeight: '1.8',
+                  }}
+                  suppressContentEditableWarning
+                >
+                  {/* 초기 컨텐츠는 useEffect에서 설정 */}
+                </div>
+                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                  <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">
+                    ✨ 일반 모드
+                  </span>
+                  <span>서식이 자동으로 적용됩니다. 마크다운 문법이 보이지 않아요!</span>
+                </div>
               </div>
             ) : (
-              <textarea
-                ref={textareaRef}
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                className="w-full min-h-[60vh] p-4 md:p-6 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none"
-                placeholder="오늘 하루는 어땠나요? 자유롭게 기록해보세요...
+              <div className="relative">
+                <textarea
+                  ref={textareaRef}
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  className="w-full min-h-[60vh] p-4 md:p-6 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none font-mono"
+                  placeholder="오늘 하루는 어땠나요? 자유롭게 기록해보세요...
 
 💡 마크다운 문법을 사용할 수 있어요:
 **굵게**, *기울임*, ~~취소선~~
@@ -483,12 +646,18 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
 1. 번호 매기기
 > 인용구
 `인라인 코드`"
-                style={{
-                  fontSize: `${fontSize}px`,
-                  fontFamily: fontFamilies[fontFamily as keyof typeof fontFamilies],
-                  lineHeight: '1.8',
-                }}
-              />
+                  style={{
+                    fontSize: `${fontSize}px`,
+                    lineHeight: '1.8',
+                  }}
+                />
+                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                  <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded font-mono">
+                    📝 마크다운 모드
+                  </span>
+                  <span>마크다운 문법을 직접 작성할 수 있어요 (개발자용)</span>
+                </div>
+              </div>
             )}
 
             {/* 사진 미리보기 */}
@@ -578,9 +747,9 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
         <button
           type="button"
           onClick={() => setFullScreenMode(true)}
-          className="text-sm px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50"
+          className="text-sm px-3 py-1.5 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 shadow-sm font-medium"
         >
-          🖊️ 전체화면 에디터
+          🖊️ 전문 에디터로 작성하기
         </button>
       </div>
 
