@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useHealthStore } from '@/store/healthStore';
 import { calculateWalkingMetrics, getRecentWeight } from '@/utils/walkingCalculator';
+import GoogleFitSync from '@/components/GoogleFitSync';
 
 export default function HealthRecordForm() {
   const addRecord = useHealthStore((state) => state.addRecord);
@@ -199,6 +200,11 @@ export default function HealthRecordForm() {
           기록 추가
         </button>
       </form>
+
+      {/* Google Fit 연동 섹션 */}
+      <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <GoogleFitSync />
+      </div>
     </div>
   );
 }
