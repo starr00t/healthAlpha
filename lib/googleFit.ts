@@ -44,6 +44,10 @@ export async function exchangeCodeForToken(code: string): Promise<GoogleFitCrede
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri = 'https://health-alpha-nu.vercel.app/api/auth/google/callback';
 
+  console.log('Token exchange - Client ID:', clientId?.substring(0, 20) + '...');
+  console.log('Token exchange - Redirect URI:', redirectUri);
+  console.log('Token exchange - Code received:', code ? 'yes' : 'no');
+
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: {
@@ -58,11 +62,14 @@ export async function exchangeCodeForToken(code: string): Promise<GoogleFitCrede
     }),
   });
 
+  const data = await response.json();
+
   if (!response.ok) {
-    throw new Error('Failed to exchange code for token');
+    console.error('Token exchange failed:', response.status, data);
+    throw new Error(`Failed to exchange code for token: ${JSON.stringify(data)}`);
   }
 
-  const data = await response.json();
+  console.log('Token exchange successful');
   
   return {
     accessToken: data.access_token,

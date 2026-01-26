@@ -2,10 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeForToken } from '@/lib/googleFit';
 import { Redis } from '@upstash/redis';
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
+// Redis 초기화 (환경변수 확인)
+let redis: Redis | null = null;
+try {
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+  } else {
+    console.warn('Redis credentials not configured');
+  }
+} catch (error) {
+  console.error('Failed to initialize Redis:', error);
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,14 +48,21 @@ export async function GET(request: NextRequest) {
     console.log('Token exchange successful');
 
     // Redis에 사용자의 Google Fit 토큰 저장
-    if (state) {
-      await redis.set(`google-fit-token:${state}`, {
-        accessToken: credentials.accessToken,
-        refreshToken: credentials.refreshToken,
-        expiresAt: credentials.expiresAt,
-        connectedAt: new Date().toISOString(),
-      });
-      console.log('Token saved to Redis for user:', state);
+    if (state && redis) {
+      try {
+        await redis.set(`google-fit-token:${state}`, {
+          accessToken: credentials.accessToken,
+          refreshToken: credentials.refreshToken,
+          expiresAt: credentials.expiresAt,
+          connectedAt: new Date().toISOString(),
+        });
+        console.log('Token saved to Redis for user:', state);
+      } catch (redisError) {
+        console.error('Failed to save token to Redis:', redisError);
+        // Redis 저장 실패해도 연결은 성공으로 처리
+      }
+    } else if (!redis) {
+      console.warn('Redis not available, token not persisted');
     }
 
     // 성공 메시지와 함께 리다이렉트
