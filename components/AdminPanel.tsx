@@ -156,17 +156,41 @@ export default function AdminPanel() {
     setTestResult(null);
 
     try {
-      const response = await fetch('https://api.openai.com/v1/models', {
+      // 먼저 API 키 유효성 확인
+      const modelsResponse = await fetch('https://api.openai.com/v1/models', {
         headers: {
           Authorization: `Bearer ${apiKey.trim()}`,
         },
       });
 
-      if (response.ok) {
-        setTestResult('✅ API 키가 유효합니다!');
-      } else {
-        const error = await response.json();
+      if (!modelsResponse.ok) {
+        const error = await modelsResponse.json();
         setTestResult(`❌ API 키가 유효하지 않습니다: ${error.error?.message || '알 수 없는 오류'}`);
+        return;
+      }
+
+      const modelsData = await modelsResponse.json();
+      const availableModels = modelsData.data?.map((m: any) => m.id) || [];
+      
+      // 선택한 모델이 사용 가능한지 확인
+      const modelExists = availableModels.includes(model);
+      
+      if (modelExists) {
+        setTestResult(`✅ API 키가 유효합니다! 선택한 모델 "${model}"을 사용할 수 있습니다.`);
+      } else {
+        // GPT-5.2가 없으면 비슷한 모델 찾기
+        const gpt5Models = availableModels.filter((m: string) => m.includes('gpt-5'));
+        const gpt4Models = availableModels.filter((m: string) => m.includes('gpt-4'));
+        
+        let suggestion = '';
+        if (gpt5Models.length > 0) {
+          suggestion = `\n사용 가능한 GPT-5 모델: ${gpt5Models.join(', ')}`;
+        } else if (gpt4Models.length > 0) {
+          suggestion = `\n추천 모델: ${gpt4Models[0]}`;
+        }
+        
+        setTestResult(`⚠️ API 키는 유효하지만, "${model}" 모델을 사용할 수 없습니다.${suggestion}\n\n사용 가능한 모델을 확인하려면 콘솔을 확인하세요.`);
+        console.log('사용 가능한 모델 목록:', availableModels);
       }
     } catch (error) {
       setTestResult(`❌ 연결 오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
@@ -674,9 +698,11 @@ export default function AdminPanel() {
                 </button>
               </div>
               {testResult && (
-                <div className={`mt-2 p-3 rounded-lg text-sm ${
+                <div className={`mt-2 p-3 rounded-lg text-sm whitespace-pre-wrap ${
                   testResult.startsWith('✅') 
                     ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200'
+                    : testResult.startsWith('⚠️')
+                    ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200'
                     : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200'
                 }`}>
                   {testResult}
