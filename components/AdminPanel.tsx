@@ -719,11 +719,29 @@ export default function AdminPanel() {
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg 
                          bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
-                <option value="gpt-4o-mini">GPT-4o Mini (추천 - 저렴하고 빠름)</option>
-                <option value="gpt-4o">GPT-4o (고급 - 더 정확함)</option>
-                <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                <option value="gpt-3.5-turbo">GPT-3.5 Turbo (가장 저렴)</option>
+                <optgroup label="GPT-5 시리즈 (최신)">
+                  <option value="gpt-5.2">GPT-5.2 (최신 - 최고 성능)</option>
+                  <option value="gpt-5">GPT-5</option>
+                </optgroup>
+                <optgroup label="GPT-4o 시리즈">
+                  <option value="gpt-4o-mini">GPT-4o Mini (추천 - 빠르고 경제적)</option>
+                  <option value="gpt-4o">GPT-4o (고급 - 멀티모달, 빠른 응답)</option>
+                </optgroup>
+                <optgroup label="o1 시리즈 (추론 특화)">
+                  <option value="o1">o1 (고급 추론)</option>
+                  <option value="o1-mini">o1-mini (빠른 추론)</option>
+                </optgroup>
+                <optgroup label="GPT-4 시리즈">
+                  <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                  <option value="gpt-4">GPT-4</option>
+                </optgroup>
+                <optgroup label="GPT-3.5 시리즈">
+                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo (가장 경제적)</option>
+                </optgroup>
               </select>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                💡 일반 건강 조언: gpt-4o-mini | 복잡한 분석: gpt-5.2 또는 gpt-4o
+              </p>
             </div>
 
             {/* 고급 설정 */}

@@ -69,28 +69,32 @@ function buildHealthPrompt(request: AIRequest): string {
 
   // 조언 유형별 요청
   prompt += '## 요청 사항\n';
-  switch (type) {
-    case 'weight':
-      prompt += '체중 관리에 대한 조언을 제공해주세요.\n';
-      break;
-    case 'bloodPressure':
-      prompt += '혈압 관리에 대한 조언을 제공해주세요.\n';
-      break;
-    case 'bloodSugar':
-      prompt += '혈당 관리에 대한 조언을 제공해주세요.\n';
-      break;
-    case 'lifestyle':
-      prompt += '생활 습관 개선에 대한 조언을 제공해주세요.\n';
-      break;
-    case 'goal':
-      prompt += '건강 목표 달성을 위한 조언을 제공해주세요.\n';
-      break;
-    default:
-      prompt += '전반적인 건강 상태에 대한 조언을 제공해주세요.\n';
-  }
-
+  
+  // 질문이 있으면 질문을 우선시
   if (question) {
-    prompt += `\n사용자 질문: ${question}\n`;
+    prompt += `사용자의 구체적인 질문에 답변해주세요:\n"${question}"\n\n`;
+    prompt += '위 질문에 대해 아래 건강 기록과 사용자 정보를 참고하여 맞춤형 답변을 제공해주세요.\n';
+  } else {
+    // 질문이 없을 때만 type에 따라 일반 조언
+    switch (type) {
+      case 'weight':
+        prompt += '체중 관리에 대한 조언을 제공해주세요.\n';
+        break;
+      case 'bloodPressure':
+        prompt += '혈압 관리에 대한 조언을 제공해주세요.\n';
+        break;
+      case 'bloodSugar':
+        prompt += '혈당 관리에 대한 조언을 제공해주세요.\n';
+        break;
+      case 'lifestyle':
+        prompt += '생활 습관 개선에 대한 조언을 제공해주세요.\n';
+        break;
+      case 'goal':
+        prompt += '건강 목표 달성을 위한 조언을 제공해주세요.\n';
+        break;
+      default:
+        prompt += '전반적인 건강 상태에 대한 조언을 제공해주세요.\n';
+    }
   }
 
   prompt += `
@@ -210,14 +214,14 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: 'system',
-            content: '당신은 친절하고 전문적인 건강 상담 AI입니다. 한국어로 응답하며, 의학적 조언은 일반적인 건강 관리 수준에서만 제공합니다. JSON 형식으로만 응답하세요.',
+            content: '당신은 친절하고 전문적인 건강 상담 AI입니다. 한국어로 응답하며, 의학적 조언은 일반적인 건강 관리 수준에서만 제공합니다. 사용자의 질문이나 상황에 따라 맞춤형 답변을 제공하세요. 질문이 다르면 다른 답변을 생성해야 합니다. JSON 형식으로만 응답하세요.',
           },
           {
             role: 'user',
             content: prompt,
           },
         ],
-        temperature: 0.7,
+        temperature: 0.8, // 다양성을 위해 temperature 증가
         max_tokens: 1000,
         response_format: { type: 'json_object' }, // JSON 응답 강제
       }),
