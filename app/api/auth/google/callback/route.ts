@@ -65,11 +65,15 @@ export async function GET(request: NextRequest) {
       console.warn('Redis not available, token not persisted');
     }
 
-    // 성공 메시지와 함께 리다이렉트
+    // 성공 메시지와 함께 리다이렉트 (토큰 정보를 URL에 포함)
     console.log('Redirecting to app with success status');
-    return NextResponse.redirect(
-      new URL('/?google_fit=connected', request.url)
-    );
+    const successUrl = new URL('/', request.url);
+    successUrl.searchParams.set('google_fit', 'connected');
+    successUrl.searchParams.set('access_token', credentials.accessToken);
+    successUrl.searchParams.set('refresh_token', credentials.refreshToken || '');
+    successUrl.searchParams.set('expires_at', credentials.expiresAt.toString());
+    
+    return NextResponse.redirect(successUrl);
   } catch (error) {
     console.error('Google OAuth callback error:', error);
     return NextResponse.redirect(

@@ -20,10 +20,18 @@ export default function GoogleFitSync() {
       const params = new URLSearchParams(window.location.search);
       const googleFitStatus = params.get('google_fit');
       const errorStatus = params.get('error');
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      const expiresAt = params.get('expires_at');
       
-      if (googleFitStatus === 'connected') {
-        // 연결 성공 - localStorage에 저장
+      if (googleFitStatus === 'connected' && accessToken) {
+        // 연결 성공 - localStorage에 토큰 저장
         localStorage.setItem(`google-fit-connected:${user.id}`, 'true');
+        localStorage.setItem(`google-fit-token:${user.id}`, JSON.stringify({
+          accessToken,
+          refreshToken: refreshToken || null,
+          expiresAt: parseInt(expiresAt || '0'),
+        }));
         setIsConnected(true);
         
         // URL에서 파라미터 제거
@@ -112,17 +120,29 @@ export default function GoogleFitSync() {
 
     setIsSyncing(true);
     try {
+      // localStorage에서 토큰 가져오기
+      const tokenStr = localStorage.getItem(`google-fit-token:${user.id}`);
+      if (!tokenStr) {
+        throw new Error('Google Fit token not found');
+      }
+
+      const tokenData = JSON.parse(tokenStr);
+      
       const response = await fetch('/api/google-fit/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
           userEmail: user.email,
+          accessToken: tokenData.accessToken,
+          refreshToken: tokenData.refreshToken,
+          expiresAt: tokenData.expiresAt,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Sync failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Sync failed');
       }
 
       const data = await response.json();
@@ -145,7 +165,7 @@ export default function GoogleFitSync() {
       alert(`✅ 동기화 완료!\n걸음수: ${data.steps.toLocaleString()}걸음`);
     } catch (error) {
       console.error('Sync error:', error);
-      alert('동기화에 실패했습니다. Google Fit 연결을 다시 시도해주세요.');
+      alert(`동기화 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}\n\nGoogle Fit 연결을 다시 시도해주세요.`);
     } finally {
       setIsSyncing(false);
     }
