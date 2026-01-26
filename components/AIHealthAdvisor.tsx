@@ -9,7 +9,7 @@ import { getAIHealthAdvice, analyzeHealthData, AIAdviceResponse } from '@/lib/ai
 export default function AIHealthAdvisor() {
   const records = useHealthStore((state) => state.records);
   const user = useAuthStore((state) => state.user);
-  const { settings } = useAdminStore();
+  const adminStore = useAdminStore();
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<{
     weightAnalysis?: AIAdviceResponse;
@@ -20,9 +20,26 @@ export default function AIHealthAdvisor() {
   const [customQuestion, setCustomQuestion] = useState('');
   const [customAdvice, setCustomAdvice] = useState<AIAdviceResponse | null>(null);
 
+  // localStorage에서 직접 설정 읽기 (hydration 문제 해결)
+  const getAdminSettings = () => {
+    if (typeof window === 'undefined') return adminStore.settings;
+    
+    try {
+      const stored = localStorage.getItem('health-alpha-admin-settings');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.state?.settings || adminStore.settings;
+      }
+    } catch (e) {
+      console.error('Failed to load admin settings:', e);
+    }
+    return adminStore.settings;
+  };
+
   const handleAnalyze = async () => {
     setLoading(true);
     try {
+      const settings = getAdminSettings();
       const result = await analyzeHealthData(
         records,
         user?.profile,
@@ -43,10 +60,13 @@ export default function AIHealthAdvisor() {
     if (!customQuestion.trim()) return;
 
     setLoading(true);
+    const settings = getAdminSettings();
+    
     console.log('=== Asking AI ===');
     console.log('Question:', customQuestion);
     console.log('User subscription:', user?.subscription?.tier);
     console.log('API Key configured:', !!settings.openaiApiKey);
+    console.log('API Key length:', settings.openaiApiKey?.length || 0);
     
     try {
       const advice = await getAIHealthAdvice(
