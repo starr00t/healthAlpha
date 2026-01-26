@@ -204,6 +204,8 @@ export async function getAIHealthAdvice(
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Unknown error' }));
       console.error('AI API Error:', error);
+      console.error('Status:', response.status);
+      console.error('Status Text:', response.statusText);
       
       // 구독 관련 에러는 그대로 전달
       if (response.status === 403 || response.status === 429) {

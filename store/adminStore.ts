@@ -23,7 +23,7 @@ export const useAdminStore = create<AdminStore>()(
         openaiModel: 'gpt-4o-mini',
         maxTokens: 500,
         temperature: 0.7,
-        enableAIFeatures: false,
+        enableAIFeatures: true, // 기본값 true로 변경
       },
 
       updateSettings: (newSettings) => {
