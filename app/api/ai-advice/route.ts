@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
           },
         ],
         temperature: 0.8, // 다양성을 위해 temperature 증가
-        max_tokens: 1000,
+        max_completion_tokens: 1000, // 최신 모델용 파라미터
         response_format: { type: 'json_object' }, // JSON 응답 강제
       }),
     });
