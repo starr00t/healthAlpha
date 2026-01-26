@@ -122,10 +122,11 @@ export async function getTodaySteps(accessToken: string): Promise<number> {
   console.log('Fetching steps from Google Fit...');
   console.log('Time range:', startOfDay.toISOString(), 'to', endOfDay.toISOString());
 
+  // 여러 데이터 소스를 시도 (권한에 따라 다름)
   const requestBody = {
     aggregateBy: [{
       dataTypeName: 'com.google.step_count.delta',
-      dataSourceId: 'derived:com.google.step_count.delta:com.google.android.gms:estimated_steps',
+      // 특정 소스 지정 대신 모든 소스에서 가져오기
     }],
     bucketByTime: { durationMillis: 86400000 }, // 1 day
     startTimeMillis: startOfDay.getTime(),
