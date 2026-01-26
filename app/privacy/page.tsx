@@ -154,7 +154,7 @@ export default function PrivacyPolicyPage() {
               개인정보 처리방침에 대한 질문이나 우려사항이 있으시면 연락해 주세요:
             </p>
             <ul className="list-none space-y-2 ml-4">
-              <li><strong>이메일:</strong> admin@health-alpha.app</li>
+              <li><strong>이메일:</strong> godstarr00t@gmail.com</li>
               <li><strong>서비스명:</strong> Health Alpha</li>
               <li><strong>웹사이트:</strong> https://health-alpha-nu.vercel.app</li>
             </ul>

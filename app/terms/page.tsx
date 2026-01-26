@@ -146,7 +146,7 @@ export default function TermsOfServicePage() {
               12. 문의하기
             </h2>
             <ul className="list-none space-y-2 ml-4">
-              <li><strong>이메일:</strong> admin@health-alpha.app</li>
+              <li><strong>이메일:</strong> godstarr00t@gmail.com</li>
               <li><strong>서비스명:</strong> Health Alpha</li>
               <li><strong>웹사이트:</strong> https://health-alpha-nu.vercel.app</li>
             </ul>
