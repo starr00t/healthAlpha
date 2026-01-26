@@ -147,11 +147,19 @@ export default function AIHealthAdvisor() {
   // AI 조언을 히스토리에 저장하는 함수
   const saveAIAdviceToHistory = (advice: any) => {
     try {
+      if (!user) return;
+
       const stored = localStorage.getItem('health-alpha-ai-history');
       const history = stored ? JSON.parse(stored) : [];
       
+      // userId 추가
+      const adviceWithUser = {
+        ...advice,
+        userId: user.id,
+      };
+      
       // 최신 조언을 맨 앞에 추가 (최대 10개 유지)
-      const newHistory = [advice, ...history].slice(0, 10);
+      const newHistory = [adviceWithUser, ...history].slice(0, 10);
       
       localStorage.setItem('health-alpha-ai-history', JSON.stringify(newHistory));
     } catch (error) {
