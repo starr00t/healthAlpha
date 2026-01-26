@@ -4,7 +4,9 @@ import { useAuthStore } from '@/store/authStore';
 import { useHealthStore } from '@/store/healthStore';
 import { useGoalsStore } from '@/store/goalsStore';
 import { useCalendarStore } from '@/store/calendarStore';
+import { useHomeLayoutStore } from '@/store/homeLayoutStore';
 import { useEffect, useMemo, useState } from 'react';
+import HomeLayoutSettings from './HomeLayoutSettings';
 
 interface GoalProgress {
   id: string;
@@ -24,6 +26,7 @@ export default function HomePage() {
   const { records } = useHealthStore();
   const { goals, getActiveGoals } = useGoalsStore();
   const { events } = useCalendarStore();
+  const { widgets } = useHomeLayoutStore();
   const [lastAIAdvice, setLastAIAdvice] = useState<any>(null);
   const [healthAnalysisAdvices, setHealthAnalysisAdvices] = useState<any[]>([]);
 
@@ -411,7 +414,7 @@ export default function HomePage() {
               </div>
             )}
 
-            {adviceDaysAgo && adviceDaysAgo >= 7 && (
+            {adviceDaysAgo !== null && adviceDaysAgo >= 7 && (
               <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                 <p className="text-sm text-yellow-800 dark:text-yellow-200">
                   ⚠️ 마지막 건강 조언을 받은지 일주일이 지났습니다. AI 건강 조언 탭에서 새로운 조언을 받아보세요!
@@ -430,6 +433,9 @@ export default function HomePage() {
           </div>
         )}
       </div>
+
+      {/* 홈 화면 설정 버튼 */}
+      <HomeLayoutSettings />
     </div>
   );
 }
