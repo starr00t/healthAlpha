@@ -18,7 +18,12 @@ export interface StepsData {
  */
 export function getGoogleAuthUrl(): string {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`;
+  
+  // 자동으로 올바른 URL 감지
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                  (typeof window !== 'undefined' ? window.location.origin : 'https://health-alpha-nu.vercel.app');
+  const redirectUri = `${baseUrl}/api/auth/google/callback`;
+  
   const scope = 'https://www.googleapis.com/auth/fitness.activity.read';
   
   const params = new URLSearchParams({
