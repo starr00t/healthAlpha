@@ -19,6 +19,7 @@ export default function GoogleFitSync() {
     if (typeof window !== 'undefined' && user) {
       const params = new URLSearchParams(window.location.search);
       const googleFitStatus = params.get('google_fit');
+      const errorStatus = params.get('error');
       
       if (googleFitStatus === 'connected') {
         // 연결 성공 - localStorage에 저장
@@ -30,6 +31,14 @@ export default function GoogleFitSync() {
         
         // 성공 메시지
         alert('✅ Google Fit 연결 완료!');
+        
+        console.log('Google Fit connected successfully for user:', user.id);
+      } else if (errorStatus) {
+        console.error('Google Fit connection error:', errorStatus);
+        alert(`❌ Google Fit 연결 실패: ${errorStatus}`);
+        
+        // URL에서 파라미터 제거
+        window.history.replaceState({}, '', window.location.pathname);
       }
     }
   }, [user]);
