@@ -142,11 +142,11 @@ export async function POST(request: NextRequest) {
     const subscription = body.userSubscription;
     const userId = body.userId;
     
-    // 관리자는 항상 Pro 구독으로 처리 (무제한)
-    const isAdmin = subscription?.tier === 'pro' && subscription?.aiRequestsLimit === -1;
+    // Pro 사용자 확인 (aiRequestsLimit이 -1이거나 undefined인 경우)
+    const isProUser = subscription?.tier === 'pro';
     
-    // 구독 정보가 없거나 무료 사용자인 경우 (관리자 제외)
-    if (!isAdmin && (!subscription || subscription.tier === 'free')) {
+    // 구독 정보가 없거나 무료 사용자인 경우
+    if (!subscription || subscription.tier === 'free') {
       // 무료 사용자는 기본 조언만 제공 (OpenAI 사용 안 함)
       return NextResponse.json({
         advice: '무료 사용자는 기본 건강 조언만 제공됩니다. 프리미엄으로 업그레이드하면 AI 맞춤형 조언을 받을 수 있습니다.',
@@ -161,8 +161,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 관리자가 아닌 경우 구독 만료 확인
-    if (!isAdmin && subscription) {
+    // Pro가 아닌 경우 구독 만료 확인
+    if (!isProUser && subscription) {
       // 구독 만료 확인
       if (subscription.status !== 'active') {
         return NextResponse.json({
@@ -179,8 +179,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Pro가 아닌 경우 사용 한도 확인 (관리자 제외)
-    if (!isAdmin && subscription && subscription.tier !== 'pro') {
+    // Pro가 아닌 경우 사용 한도 확인
+    if (!isProUser && subscription && subscription.tier !== 'pro') {
       const used = subscription.aiRequestsUsed || 0;
       const limit = subscription.aiRequestsLimit || 0;
       
@@ -280,11 +280,11 @@ export async function POST(request: NextRequest) {
       warnings: Array.isArray(parsedResponse.warnings) ? parsedResponse.warnings : undefined,
       priority: parsedResponse.priority || 'medium',
       isPremium: true,
-      usageInfo: subscription.tier !== 'pro' ? {
-        used: (subscription.aiRequestsUsed || 0) + 1,
-        limit: subscription.aiRequestsLimit || 0,
-        remaining: (subscription.aiRequestsLimit || 0) - (subscription.aiRequestsUsed || 0) - 1,
-      } : undefined,
+      usageInfo: subscription?.tier === 'pro' ? undefined : {
+        used: (subscription?.aiRequestsUsed || 0) + 1,
+        limit: subscription?.aiRequestsLimit || 0,
+        remaining: (subscription?.aiRequestsLimit || 0) - (subscription?.aiRequestsUsed || 0) - 1,
+      },
     };
 
     return NextResponse.json(result);

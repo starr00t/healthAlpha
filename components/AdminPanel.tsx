@@ -212,7 +212,7 @@ export default function AdminPanel() {
         startDate: new Date().toISOString(),
         endDate: days ? new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString() : undefined,
         aiRequestsUsed: 0,
-        aiRequestsLimit: selectedTier === 'pro' ? undefined : (selectedTier === 'premium' ? 50 : 5),
+        aiRequestsLimit: selectedTier === 'pro' ? -1 : (selectedTier === 'premium' ? 100 : 5),
       };
 
       const response = await fetch('/api/users', {
