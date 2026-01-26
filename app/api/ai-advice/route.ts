@@ -128,8 +128,8 @@ export async function POST(request: NextRequest) {
     const adminApiKey = request.headers.get('x-admin-api-key');
     const adminModel = request.headers.get('x-admin-model') || 'gpt-4o-mini';
 
-    // API 키 검증 (관리자 설정 또는 환경 변수)
-    const OPENAI_API_KEY = adminApiKey || process.env.OPENAI_API_KEY;
+    // API 키 검증 (환경 변수 우선, 관리자 설정은 보조)
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY || adminApiKey;
     
     if (!OPENAI_API_KEY) {
       return NextResponse.json(
