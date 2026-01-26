@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 import { getTodaySteps, refreshAccessToken } from '@/lib/googleFit';
 import { calculateWalkingMetrics } from '@/utils/walkingCalculator';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Redis에서 Google Fit 토큰 가져오기
-    const tokenData: any = await kv.get(`google-fit-token:${userId}`);
+    const tokenData: any = await redis.get(`google-fit-token:${userId}`);
 
     if (!tokenData) {
       return NextResponse.json(
@@ -39,7 +44,7 @@ export async function POST(request: NextRequest) {
       accessToken = newCredentials.accessToken;
 
       // 갱신된 토큰 저장
-      await kv.set(`google-fit-token:${userId}`, {
+      await redis.set(`google-fit-token:${userId}`, {
         ...tokenData,
         accessToken: newCredentials.accessToken,
         expiresAt: newCredentials.expiresAt,
@@ -50,7 +55,7 @@ export async function POST(request: NextRequest) {
     const steps = await getTodaySteps(accessToken);
 
     // 최근 체중 기록 가져오기 (Redis에서)
-    const healthData: any = await kv.get(`health:${userEmail}`);
+    const healthData: any = await redis.get(`health:${userEmail}`);
     let userWeight = 70; // 기본값
 
     if (healthData && Array.isArray(healthData)) {
@@ -64,7 +69,7 @@ export async function POST(request: NextRequest) {
     const { walkingTime, calories } = calculateWalkingMetrics(steps, userWeight);
 
     // 업데이트 플래그 제거
-    await kv.del(`google-fit-updated:${userId}`);
+    await redis.del(`google-fit-updated:${userId}`);
 
     return NextResponse.json({
       steps,
@@ -98,7 +103,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 업데이트 플래그 확인
-    const updateFlag: any = await kv.get(`google-fit-updated:${userId}`);
+    const updateFlag: any = await redis.get(`google-fit-updated:${userId}`);
 
     return NextResponse.json({
       hasUpdate: !!updateFlag,

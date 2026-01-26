@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeForToken } from '@/lib/googleFit';
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     // Redis에 사용자의 Google Fit 토큰 저장
     if (state) {
-      await kv.set(`google-fit-token:${state}`, {
+      await redis.set(`google-fit-token:${state}`, {
         accessToken: credentials.accessToken,
         refreshToken: credentials.refreshToken,
         expiresAt: credentials.expiresAt,

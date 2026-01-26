@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 /**
  * Google Fit Webhook 엔드포인트
@@ -24,7 +29,7 @@ export async function POST(request: NextRequest) {
       const userId = body.userId;
       
       // 변경 플래그 설정 (클라이언트가 폴링으로 확인)
-      await kv.set(`google-fit-updated:${userId}`, {
+      await redis.set(`google-fit-updated:${userId}`, {
         updated: true,
         timestamp: new Date().toISOString(),
         dataType: 'steps',
