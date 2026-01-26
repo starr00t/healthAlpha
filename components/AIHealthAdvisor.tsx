@@ -49,6 +49,46 @@ export default function AIHealthAdvisor() {
         settings.openaiModel
       );
       setAnalysis(result);
+      
+      // 분석 결과를 히스토리에 저장
+      if (result.overallAnalysis) {
+        saveAIAdviceToHistory({
+          type: 'overall',
+          category: '종합 건강 분석',
+          advice: result.overallAnalysis.advice,
+          recommendations: result.overallAnalysis.recommendations,
+          warnings: result.overallAnalysis.warnings,
+          priority: result.overallAnalysis.priority,
+          timestamp: new Date().toISOString(),
+        });
+      }
+      if (result.weightAnalysis) {
+        saveAIAdviceToHistory({
+          type: 'weight',
+          category: '체중 분석',
+          advice: result.weightAnalysis.advice,
+          recommendations: result.weightAnalysis.recommendations,
+          timestamp: new Date().toISOString(),
+        });
+      }
+      if (result.bloodPressureAnalysis) {
+        saveAIAdviceToHistory({
+          type: 'bloodPressure',
+          category: '혈압 분석',
+          advice: result.bloodPressureAnalysis.advice,
+          recommendations: result.bloodPressureAnalysis.recommendations,
+          timestamp: new Date().toISOString(),
+        });
+      }
+      if (result.bloodSugarAnalysis) {
+        saveAIAdviceToHistory({
+          type: 'bloodSugar',
+          category: '혈당 분석',
+          advice: result.bloodSugarAnalysis.advice,
+          recommendations: result.bloodSugarAnalysis.recommendations,
+          timestamp: new Date().toISOString(),
+        });
+      }
     } catch (error) {
       console.error('분석 중 오류:', error);
     } finally {
@@ -89,8 +129,10 @@ export default function AIHealthAdvisor() {
       // AI 조언 히스토리에 저장
       saveAIAdviceToHistory({
         type: 'custom',
+        category: 'AI에게 질문하기',
         question: customQuestion,
         advice: advice.advice,
+        recommendations: advice.recommendations,
         timestamp: new Date().toISOString(),
       });
       

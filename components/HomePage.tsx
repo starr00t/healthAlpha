@@ -236,18 +236,71 @@ export default function HomePage() {
       {/* 최근 건강 조언 */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
-          💡 건강 조언
+          💡 최근 건강 조언
         </h2>
         {lastAIAdvice ? (
           <div>
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
-              <p className="text-gray-700 dark:text-gray-300 mb-2">
-                {lastAIAdvice.advice?.substring(0, 150)}...
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {adviceDaysAgo === 0 ? '오늘' : `${adviceDaysAgo}일 전`} 받은 조언
+            {/* 카테고리 표시 */}
+            <div className="flex items-center gap-2 mb-3">
+              <span className="px-3 py-1 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm font-medium">
+                {lastAIAdvice.category || '건강 조언'}
+              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {adviceDaysAgo === 0 ? '오늘' : `${adviceDaysAgo}일 전`}
+              </span>
+            </div>
+
+            {/* 질문 표시 (있을 경우) */}
+            {lastAIAdvice.question && (
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">질문:</p>
+                <p className="text-gray-800 dark:text-white font-medium">
+                  {lastAIAdvice.question}
+                </p>
+              </div>
+            )}
+
+            {/* 조언 내용 전체 표시 */}
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-lg p-5 mb-4">
+              <p className="text-gray-800 dark:text-gray-100 leading-relaxed whitespace-pre-wrap">
+                {lastAIAdvice.advice}
               </p>
             </div>
+
+            {/* 권장사항 표시 */}
+            {lastAIAdvice.recommendations && lastAIAdvice.recommendations.length > 0 && (
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mb-4">
+                <h3 className="font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
+                  📋 권장사항
+                </h3>
+                <ul className="space-y-2">
+                  {lastAIAdvice.recommendations.map((rec: string, i: number) => (
+                    <li key={i} className="text-sm text-green-700 dark:text-green-300 flex items-start gap-2">
+                      <span className="text-green-600 dark:text-green-400 mt-1">•</span>
+                      <span>{rec}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 경고 표시 */}
+            {lastAIAdvice.warnings && lastAIAdvice.warnings.length > 0 && (
+              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 mb-4">
+                <h3 className="font-semibold text-red-800 dark:text-red-200 mb-2 flex items-center gap-2">
+                  ⚠️ 주의사항
+                </h3>
+                <ul className="space-y-2">
+                  {lastAIAdvice.warnings.map((warning: string, i: number) => (
+                    <li key={i} className="text-sm text-red-700 dark:text-red-300 flex items-start gap-2">
+                      <span className="text-red-600 dark:text-red-400 mt-1">•</span>
+                      <span>{warning}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {adviceDaysAgo && adviceDaysAgo >= 7 && (
               <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                 <p className="text-sm text-yellow-800 dark:text-yellow-200">
