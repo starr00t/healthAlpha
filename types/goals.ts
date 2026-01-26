@@ -3,7 +3,7 @@
 export interface HealthGoal {
   id: string;
   userId: string;
-  type: 'weight' | 'bloodPressure' | 'bloodSugar';
+  type: 'weight' | 'bloodPressure' | 'bloodSugar' | 'steps' | 'calories';
   targetValue: number;
   targetSystolic?: number; // 혈압용
   targetDiastolic?: number; // 혈압용

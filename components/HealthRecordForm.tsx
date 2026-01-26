@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import { useHealthStore } from '@/store/healthStore';
+import { calculateWalkingMetrics, getRecentWeight } from '@/utils/walkingCalculator';
 
 export default function HealthRecordForm() {
   const addRecord = useHealthStore((state) => state.addRecord);
+  const records = useHealthStore((state) => state.records);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     weight: '',
@@ -12,6 +14,7 @@ export default function HealthRecordForm() {
     diastolic: '',
     heartRate: '',
     bloodSugar: '',
+    steps: '',
     notes: '',
   });
 
@@ -39,6 +42,19 @@ export default function HealthRecordForm() {
       record.bloodSugar = parseFloat(formData.bloodSugar);
     }
 
+    // 걸음수 데이터 처리 (자동 계산)
+    if (formData.steps) {
+      const steps = parseInt(formData.steps);
+      record.steps = steps;
+      
+      // 최근 체중 가져오기
+      const userWeight = getRecentWeight(records) || (formData.weight ? parseFloat(formData.weight) : undefined);
+      const { walkingTime, calories } = calculateWalkingMetrics(steps, userWeight);
+      
+      record.walkingTime = walkingTime;
+      record.calories = calories;
+    }
+
     addRecord(record);
 
     // 폼 초기화
@@ -49,6 +65,7 @@ export default function HealthRecordForm() {
       diastolic: '',
       heartRate: '',
       bloodSugar: '',
+      steps: '',
       notes: '',
     });
   };
@@ -137,6 +154,29 @@ export default function HealthRecordForm() {
             placeholder="예: 95"
             className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            걸음수 🚶
+          </label>
+          <input
+            type="number"
+            value={formData.steps}
+            onChange={(e) => setFormData({ ...formData, steps: e.target.value })}
+            placeholder="예: 10000"
+            className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          />
+          {formData.steps && parseInt(formData.steps) > 0 && (
+            <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-2">
+                <span>⏱️ 예상 걸은 시간: 약 {Math.round(parseInt(formData.steps) / 100)}분</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>🔥 예상 칼로리: 약 {Math.round(parseInt(formData.steps) * (getRecentWeight(records) || (formData.weight ? parseFloat(formData.weight) : 70)) * 0.0005)}kcal</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div>

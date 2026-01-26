@@ -9,7 +9,7 @@ export default function GoalsManager() {
   const { goals, addGoal, updateGoal, deleteGoal, getActiveGoals, syncToServer, loadFromServer } = useGoalsStore();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    type: 'weight' as 'weight' | 'bloodPressure' | 'bloodSugar',
+    type: 'weight' as 'weight' | 'bloodPressure' | 'bloodSugar' | 'steps' | 'calories',
     targetValue: '',
     targetSystolic: '',
     targetDiastolic: '',
@@ -79,6 +79,10 @@ export default function GoalsManager() {
         return `혈압 ${goal.targetSystolic}/${goal.targetDiastolic} 달성`;
       case 'bloodSugar':
         return `혈당 ${goal.targetValue}mg/dL 유지`;
+      case 'steps':
+        return `하루 ${goal.targetValue.toLocaleString()}걸음 걷기`;
+      case 'calories':
+        return `하루 ${goal.targetValue}kcal 소모`;
       default:
         return '목표';
     }
@@ -92,6 +96,10 @@ export default function GoalsManager() {
         return '❤️';
       case 'bloodSugar':
         return '🩸';
+      case 'steps':
+        return '🚶';
+      case 'calories':
+        return '🔥';
       default:
         return '🎯';
     }
@@ -124,6 +132,8 @@ export default function GoalsManager() {
               <option value="weight">체중</option>
               <option value="bloodPressure">혈압</option>
               <option value="bloodSugar">혈당</option>
+              <option value="steps">걸음수</option>
+              <option value="calories">칼로리</option>
             </select>
           </div>
 
@@ -159,14 +169,14 @@ export default function GoalsManager() {
           ) : (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                목표 {formData.type === 'weight' ? '체중 (kg)' : '혈당 (mg/dL)'}
+                목표 {formData.type === 'weight' ? '체중 (kg)' : formData.type === 'bloodSugar' ? '혈당 (mg/dL)' : formData.type === 'steps' ? '걸음수 (걸음)' : '칼로리 (kcal)'}
               </label>
               <input
                 type="number"
-                step="0.1"
+                step={formData.type === 'steps' ? '1' : '0.1'}
                 value={formData.targetValue}
                 onChange={(e) => setFormData({ ...formData, targetValue: e.target.value })}
-                placeholder={formData.type === 'weight' ? '70' : '100'}
+                placeholder={formData.type === 'weight' ? '70' : formData.type === 'bloodSugar' ? '100' : formData.type === 'steps' ? '10000' : '300'}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 dark:bg-gray-600 dark:text-white"
                 required
               />

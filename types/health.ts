@@ -10,6 +10,9 @@ export interface HealthRecord {
     heartRate?: number; // 심박수 (bpm)
   };
   bloodSugar?: number; // mg/dL
+  steps?: number; // 걸음수
+  walkingTime?: number; // 걸은 시간 (분) - 자동 계산
+  calories?: number; // 칼로리 (kcal) - 자동 계산
   notes?: string;
 }
 
@@ -20,7 +23,7 @@ export interface HealthStats {
   trend: 'up' | 'down' | 'stable';
 }
 
-export type HealthMetric = 'weight' | 'bloodPressure' | 'bloodSugar';
+export type HealthMetric = 'weight' | 'bloodPressure' | 'bloodSugar' | 'steps' | 'calories';
 
 export interface ChartDataPoint {
   date: string;

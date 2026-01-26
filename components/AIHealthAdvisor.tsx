@@ -85,11 +85,35 @@ export default function AIHealthAdvisor() {
       );
       console.log('AI Response:', advice);
       setCustomAdvice(advice);
+      
+      // AI 조언 히스토리에 저장
+      saveAIAdviceToHistory({
+        type: 'custom',
+        question: customQuestion,
+        advice: advice.advice,
+        timestamp: new Date().toISOString(),
+      });
+      
       setCustomQuestion('');
     } catch (error) {
       console.error('질문 처리 중 오류:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // AI 조언을 히스토리에 저장하는 함수
+  const saveAIAdviceToHistory = (advice: any) => {
+    try {
+      const stored = localStorage.getItem('health-alpha-ai-history');
+      const history = stored ? JSON.parse(stored) : [];
+      
+      // 최신 조언을 맨 앞에 추가 (최대 10개 유지)
+      const newHistory = [advice, ...history].slice(0, 10);
+      
+      localStorage.setItem('health-alpha-ai-history', JSON.stringify(newHistory));
+    } catch (error) {
+      console.error('Failed to save AI advice history:', error);
     }
   };
 

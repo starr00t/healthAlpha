@@ -16,13 +16,14 @@ import HealthCalendar from '@/components/HealthCalendar';
 import AIHealthAdvisor from '@/components/AIHealthAdvisor';
 import ProfileSettings from '@/components/ProfileSettings';
 import HelpPanel from '@/components/HelpPanel';
+import HomePage from '@/components/HomePage';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useHealthStore } from '@/store/healthStore';
 import { useThemeStore } from '@/store/themeStore';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'record' | 'calendar' | 'trends' | 'stats' | 'goals' | 'manage' | 'profile' | 'ai' | 'help' | 'admin'>('record');
+  const [activeTab, setActiveTab] = useState<'home' | 'record' | 'calendar' | 'trends' | 'stats' | 'goals' | 'manage' | 'profile' | 'ai' | 'help' | 'admin'>('home');
   const { isAuthenticated, user, logout } = useAuthStore();
   const { setUserId, clearRecords } = useHealthStore();
   const { isDarkMode } = useThemeStore();
@@ -106,6 +107,16 @@ export default function Home() {
         <div className="mb-6">
           <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="-mb-px flex space-x-4 overflow-x-auto">
+              <button
+                onClick={() => setActiveTab('home')}
+                className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'home'
+                    ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                🏠 홈
+              </button>
               <button
                 onClick={() => setActiveTab('record')}
                 className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap ${
@@ -213,6 +224,10 @@ export default function Home() {
         </div>
 
         {/* 콘텐츠 영역 */}
+        {activeTab === 'home' && (
+          <HomePage />
+        )}
+
         {activeTab === 'record' && (
           <div className="space-y-6">
             <StatsSummary />
