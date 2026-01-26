@@ -14,6 +14,26 @@ export default function GoogleFitSync() {
   const [syncedSteps, setSyncedSteps] = useState<number | null>(null);
   const [autoSync, setAutoSync] = useState(false);
 
+  // URL 파라미터에서 연결 성공 확인
+  useEffect(() => {
+    if (typeof window !== 'undefined' && user) {
+      const params = new URLSearchParams(window.location.search);
+      const googleFitStatus = params.get('google_fit');
+      
+      if (googleFitStatus === 'connected') {
+        // 연결 성공 - localStorage에 저장
+        localStorage.setItem(`google-fit-connected:${user.id}`, 'true');
+        setIsConnected(true);
+        
+        // URL에서 파라미터 제거
+        window.history.replaceState({}, '', window.location.pathname);
+        
+        // 성공 메시지
+        alert('✅ Google Fit 연결 완료!');
+      }
+    }
+  }, [user]);
+
   // 연결 상태 확인
   useEffect(() => {
     if (typeof window !== 'undefined' && user) {
