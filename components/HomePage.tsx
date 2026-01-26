@@ -151,6 +151,38 @@ export default function HomePage() {
         <p className="text-primary-100">오늘도 건강한 하루 되세요</p>
       </div>
 
+      {/* 오늘의 일정 */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
+          📅 오늘의 일정 ({today.getMonth() + 1}월 {today.getDate()}일)
+        </h2>
+        {todayEvents.length > 0 ? (
+          <div className="space-y-2">
+            {todayEvents.map(event => (
+              <div
+                key={event.id}
+                className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-600"
+              >
+                <div className="text-2xl">{event.category === 'medical' ? '🏥' : event.category === 'exercise' ? '🏃' : '📌'}</div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-800 dark:text-white">{event.title}</h3>
+                  {event.time && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400">⏰ {event.time}</p>
+                  )}
+                  {event.description && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{event.description}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500 dark:text-gray-400 text-center py-6">
+            오늘 예정된 일정이 없습니다.
+          </p>
+        )}
+      </div>
+
       {/* 오늘의 건강 현황 */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
@@ -396,38 +428,6 @@ export default function HomePage() {
               AI 건강 조언 탭에서 맞춤형 건강 조언을 받아보세요!
             </p>
           </div>
-        )}
-      </div>
-
-      {/* 오늘의 일정 */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
-          📅 오늘의 일정 ({today.getMonth() + 1}월 {today.getDate()}일)
-        </h2>
-        {todayEvents.length > 0 ? (
-          <div className="space-y-2">
-            {todayEvents.map(event => (
-              <div
-                key={event.id}
-                className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-600"
-              >
-                <div className="text-2xl">{event.category === 'medical' ? '🏥' : event.category === 'exercise' ? '🏃' : '📌'}</div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800 dark:text-white">{event.title}</h3>
-                  {event.time && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">⏰ {event.time}</p>
-                  )}
-                  {event.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{event.description}</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400 text-center py-6">
-            오늘 예정된 일정이 없습니다.
-          </p>
         )}
       </div>
     </div>
