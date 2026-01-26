@@ -131,6 +131,14 @@ export async function POST(request: NextRequest) {
     // API 키 검증 (환경 변수 우선, 관리자 설정은 보조)
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY || adminApiKey;
     
+    // 디버깅: API 키 소스 확인
+    console.log('=== API Key Source ===');
+    console.log('Environment variable exists:', !!process.env.OPENAI_API_KEY);
+    console.log('Admin key exists:', !!adminApiKey);
+    console.log('Admin key length:', adminApiKey?.length || 0);
+    console.log('Using:', process.env.OPENAI_API_KEY ? 'Environment variable' : adminApiKey ? 'Admin panel key' : 'None');
+    console.log('Final key length:', OPENAI_API_KEY?.length || 0);
+    
     if (!OPENAI_API_KEY) {
       return NextResponse.json(
         { error: '⚠️ 관리자가 OpenAI API 키를 등록하지 않았습니다. 관리자에게 문의하세요.' },

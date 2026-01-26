@@ -135,13 +135,29 @@ export default function AdminPanel() {
   };
 
   const handleSaveSettings = () => {
-    updateSettings({
+    const settings = {
       openaiApiKey: apiKey.trim(),
       openaiModel: model,
       maxTokens,
       temperature,
       enableAIFeatures: enableAI,
-    });
+    };
+    
+    console.log('=== Saving Admin Settings ===');
+    console.log('API Key length:', apiKey.trim().length);
+    console.log('API Key preview:', apiKey.trim().substring(0, 20) + '...');
+    console.log('Model:', model);
+    console.log('Settings:', settings);
+    
+    updateSettings(settings);
+    
+    // 저장 후 확인
+    setTimeout(() => {
+      const saved = useAdminStore.getState().settings;
+      console.log('Saved settings:', saved);
+      console.log('Saved API key length:', saved.openaiApiKey?.length || 0);
+    }, 100);
+    
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
