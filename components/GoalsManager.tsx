@@ -2,11 +2,11 @@
 
 import { useAuthStore } from '@/store/authStore';
 import { useGoalsStore } from '@/store/goalsStore';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function GoalsManager() {
   const { user } = useAuthStore();
-  const { goals, addGoal, updateGoal, deleteGoal, getActiveGoals } = useGoalsStore();
+  const { goals, addGoal, updateGoal, deleteGoal, getActiveGoals, syncToServer, loadFromServer } = useGoalsStore();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     type: 'weight' as 'weight' | 'bloodPressure' | 'bloodSugar',
@@ -16,11 +16,18 @@ export default function GoalsManager() {
     deadline: '',
   });
 
+  // 서버에서 데이터 로드
+  useEffect(() => {
+    if (user?.email) {
+      loadFromServer(user.email);
+    }
+  }, [user?.email, loadFromServer]);
+
   if (!user) return null;
 
   const userGoals = getActiveGoals(user.id);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const goal: any = {
@@ -37,6 +44,12 @@ export default function GoalsManager() {
     }
 
     addGoal(goal);
+    
+    // 서버에 동기화
+    if (user.email) {
+      await syncToServer(user.email);
+    }
+    
     setShowForm(false);
     setFormData({
       type: 'weight',
@@ -47,9 +60,14 @@ export default function GoalsManager() {
     });
   };
 
-  const handleDelete = (goalId: string) => {
+  const handleDelete = async (goalId: string) => {
     if (confirm('이 목표를 삭제하시겠습니까?')) {
       deleteGoal(goalId);
+      
+      // 서버에 동기화
+      if (user.email) {
+        await syncToServer(user.email);
+      }
     }
   };
 

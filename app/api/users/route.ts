@@ -232,6 +232,7 @@ export async function DELETE(request: NextRequest) {
     // 관련 데이터도 삭제
     await redis.del(`health:${userEmail}`);
     await redis.del(`calendar:${userEmail}`);
+    await redis.del(`goals:${userEmail}`);
 
     return NextResponse.json({
       success: true,

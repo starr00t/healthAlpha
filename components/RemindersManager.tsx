@@ -8,7 +8,7 @@ const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 export default function RemindersManager() {
   const { user } = useAuthStore();
-  const { reminders, addReminder, updateReminder, deleteReminder, getActiveReminders } =
+  const { reminders, addReminder, updateReminder, deleteReminder, getActiveReminders, syncToServer, loadFromServer } =
     useGoalsStore();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -17,6 +17,13 @@ export default function RemindersManager() {
     days: [] as number[],
   });
   const [permission, setPermission] = useState<NotificationPermission>('default');
+
+  // 서버에서 데이터 로드
+  useEffect(() => {
+    if (user?.email) {
+      loadFromServer(user.email);
+    }
+  }, [user?.email, loadFromServer]);
 
   useEffect(() => {
     if ('Notification' in window) {
@@ -35,7 +42,7 @@ export default function RemindersManager() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (formData.days.length === 0) {
@@ -51,6 +58,11 @@ export default function RemindersManager() {
       isActive: true,
     });
 
+    // 서버에 동기화
+    if (user.email) {
+      await syncToServer(user.email);
+    }
+
     setShowForm(false);
     setFormData({ title: '', time: '', days: [] });
   };
@@ -64,14 +76,24 @@ export default function RemindersManager() {
     }));
   };
 
-  const handleDelete = (reminderId: string) => {
+  const handleDelete = async (reminderId: string) => {
     if (confirm('이 알림을 삭제하시겠습니까?')) {
       deleteReminder(reminderId);
+      
+      // 서버에 동기화
+      if (user.email) {
+        await syncToServer(user.email);
+      }
     }
   };
 
-  const toggleReminderActive = (reminderId: string, isActive: boolean) => {
+  const toggleReminderActive = async (reminderId: string, isActive: boolean) => {
     updateReminder(reminderId, { isActive: !isActive });
+    
+    // 서버에 동기화
+    if (user.email) {
+      await syncToServer(user.email);
+    }
   };
 
   return (

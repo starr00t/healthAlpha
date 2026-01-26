@@ -13,6 +13,8 @@ interface GoalsStore {
   updateReminder: (id: string, updates: Partial<Reminder>) => void;
   deleteReminder: (id: string) => void;
   getActiveReminders: (userId: string) => Reminder[];
+  syncToServer: (userEmail: string) => Promise<void>;
+  loadFromServer: (userEmail: string) => Promise<void>;
 }
 
 export const useGoalsStore = create<GoalsStore>()(
@@ -75,6 +77,48 @@ export const useGoalsStore = create<GoalsStore>()(
         return get().reminders.filter(
           (reminder) => reminder.userId === userId && reminder.isActive
         );
+      },
+
+      syncToServer: async (userEmail: string) => {
+        try {
+          const { goals, reminders } = get();
+          const response = await fetch('/api/goals', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-user-email': userEmail,
+            },
+            body: JSON.stringify({ goals, reminders }),
+          });
+
+          if (!response.ok) {
+            console.error('Failed to sync goals to server');
+          }
+        } catch (error) {
+          console.error('Sync to server error:', error);
+        }
+      },
+
+      loadFromServer: async (userEmail: string) => {
+        try {
+          const response = await fetch('/api/goals', {
+            headers: {
+              'x-user-email': userEmail,
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.goals) {
+              set({
+                goals: data.goals.goals || [],
+                reminders: data.goals.reminders || [],
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Load from server error:', error);
+        }
       },
     }),
     {
