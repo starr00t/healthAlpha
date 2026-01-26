@@ -201,6 +201,15 @@ export async function POST(request: NextRequest) {
     // TODO: Redis 등을 사용한 실제 rate limiting 구현 권장
 
     const prompt = buildHealthPrompt(body);
+    
+    // 디버깅: 프롬프트 로그
+    console.log('=== AI Request Debug ===');
+    console.log('Question:', body.question);
+    console.log('Type:', body.type);
+    console.log('User Subscription:', body.userSubscription?.tier);
+    console.log('API Key exists:', !!OPENAI_API_KEY);
+    console.log('Model:', adminModel);
+    console.log('Prompt preview:', prompt.substring(0, 200) + '...');
 
     // OpenAI API 호출
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -257,6 +266,9 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
     const aiResponse = data.choices[0]?.message?.content || '{}';
+
+    // 디버깅: AI 응답 로그
+    console.log('OpenAI Response:', aiResponse.substring(0, 200) + '...');
 
     // JSON 파싱
     let parsedResponse;

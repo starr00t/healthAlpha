@@ -43,6 +43,11 @@ export default function AIHealthAdvisor() {
     if (!customQuestion.trim()) return;
 
     setLoading(true);
+    console.log('=== Asking AI ===');
+    console.log('Question:', customQuestion);
+    console.log('User subscription:', user?.subscription?.tier);
+    console.log('API Key configured:', !!settings.openaiApiKey);
+    
     try {
       const advice = await getAIHealthAdvice(
         {
@@ -58,6 +63,7 @@ export default function AIHealthAdvisor() {
         settings.openaiApiKey,
         settings.openaiModel
       );
+      console.log('AI Response:', advice);
       setCustomAdvice(advice);
       setCustomQuestion('');
     } catch (error) {
