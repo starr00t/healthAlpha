@@ -119,6 +119,21 @@ export async function getTodaySteps(accessToken: string): Promise<number> {
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
 
+  console.log('Fetching steps from Google Fit...');
+  console.log('Time range:', startOfDay.toISOString(), 'to', endOfDay.toISOString());
+
+  const requestBody = {
+    aggregateBy: [{
+      dataTypeName: 'com.google.step_count.delta',
+      dataSourceId: 'derived:com.google.step_count.delta:com.google.android.gms:estimated_steps',
+    }],
+    bucketByTime: { durationMillis: 86400000 }, // 1 day
+    startTimeMillis: startOfDay.getTime(),
+    endTimeMillis: endOfDay.getTime(),
+  };
+
+  console.log('Request body:', JSON.stringify(requestBody));
+
   const response = await fetch(
     'https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate',
     {
@@ -127,35 +142,35 @@ export async function getTodaySteps(accessToken: string): Promise<number> {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        aggregateBy: [{
-          dataTypeName: 'com.google.step_count.delta',
-          dataSourceId: 'derived:com.google.step_count.delta:com.google.android.gms:estimated_steps',
-        }],
-        bucketByTime: { durationMillis: 86400000 }, // 1 day
-        startTimeMillis: startOfDay.getTime(),
-        endTimeMillis: endOfDay.getTime(),
-      }),
+      body: JSON.stringify(requestBody),
     }
   );
 
+  console.log('Google Fit API response status:', response.status);
+
   if (!response.ok) {
-    throw new Error('Failed to fetch steps from Google Fit');
+    const errorText = await response.text();
+    console.error('Google Fit API error:', response.status, errorText);
+    throw new Error(`Failed to fetch steps from Google Fit: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
+  console.log('Google Fit API response:', JSON.stringify(data).substring(0, 500));
   
   if (!data.bucket || data.bucket.length === 0) {
+    console.log('No buckets in response');
     return 0;
   }
 
   const bucket = data.bucket[0];
   if (!bucket.dataset || bucket.dataset.length === 0) {
+    console.log('No dataset in bucket');
     return 0;
   }
 
   const dataset = bucket.dataset[0];
   if (!dataset.point || dataset.point.length === 0) {
+    console.log('No points in dataset');
     return 0;
   }
 
@@ -164,6 +179,7 @@ export async function getTodaySteps(accessToken: string): Promise<number> {
     return sum + steps;
   }, 0);
 
+  console.log('Total steps found:', totalSteps);
   return totalSteps;
 }
 
