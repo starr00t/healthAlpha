@@ -40,6 +40,19 @@ export default function TrendChart({ metric, title, color }: TrendChartProps) {
     return calculateStats(values);
   }, [chartData]);
 
+  // 혈압용 별도 통계
+  const systolicStats = useMemo(() => {
+    if (metric !== 'bloodPressure') return null;
+    const values = chartData.map((d) => d.systolic).filter((v) => v !== undefined) as number[];
+    return calculateStats(values);
+  }, [chartData, metric]);
+
+  const diastolicStats = useMemo(() => {
+    if (metric !== 'bloodPressure') return null;
+    const values = chartData.map((d) => d.diastolic).filter((v) => v !== undefined) as number[];
+    return calculateStats(values);
+  }, [chartData, metric]);
+
   if (chartData.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -78,18 +91,61 @@ export default function TrendChart({ metric, title, color }: TrendChartProps) {
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded">
-          <div className="text-sm text-gray-600 dark:text-gray-400">평균</div>
-          <div className="text-lg font-bold text-gray-800 dark:text-white">{stats.average.toFixed(1)}</div>
-        </div>
-        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded">
-          <div className="text-sm text-gray-600 dark:text-gray-400">최소</div>
-          <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{stats.min.toFixed(1)}</div>
-        </div>
-        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded">
-          <div className="text-sm text-gray-600 dark:text-gray-400">최대</div>
-          <div className="text-lg font-bold text-red-600 dark:text-red-400">{stats.max.toFixed(1)}</div>
-        </div>
+        {metric === 'bloodPressure' && systolicStats && diastolicStats ? (
+          <>
+            {/* 수축기 혈압 통계 */}
+            <div className="col-span-3 mb-2">
+              <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">수축기 혈압</div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded">
+                  <div className="text-xs text-gray-600 dark:text-gray-400">평균</div>
+                  <div className="text-base font-bold text-red-600 dark:text-red-400">{systolicStats.average.toFixed(1)}</div>
+                </div>
+                <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded">
+                  <div className="text-xs text-gray-600 dark:text-gray-400">최소</div>
+                  <div className="text-base font-bold text-red-600 dark:text-red-400">{systolicStats.min.toFixed(1)}</div>
+                </div>
+                <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded">
+                  <div className="text-xs text-gray-600 dark:text-gray-400">최대</div>
+                  <div className="text-base font-bold text-red-600 dark:text-red-400">{systolicStats.max.toFixed(1)}</div>
+                </div>
+              </div>
+            </div>
+            {/* 이완기 혈압 통계 */}
+            <div className="col-span-3">
+              <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">이완기 혈압</div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                  <div className="text-xs text-gray-600 dark:text-gray-400">평균</div>
+                  <div className="text-base font-bold text-blue-600 dark:text-blue-400">{diastolicStats.average.toFixed(1)}</div>
+                </div>
+                <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                  <div className="text-xs text-gray-600 dark:text-gray-400">최소</div>
+                  <div className="text-base font-bold text-blue-600 dark:text-blue-400">{diastolicStats.min.toFixed(1)}</div>
+                </div>
+                <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                  <div className="text-xs text-gray-600 dark:text-gray-400">최대</div>
+                  <div className="text-base font-bold text-blue-600 dark:text-blue-400">{diastolicStats.max.toFixed(1)}</div>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded">
+              <div className="text-sm text-gray-600 dark:text-gray-400">평균</div>
+              <div className="text-lg font-bold text-gray-800 dark:text-white">{stats.average.toFixed(1)}</div>
+            </div>
+            <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded">
+              <div className="text-sm text-gray-600 dark:text-gray-400">최소</div>
+              <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{stats.min.toFixed(1)}</div>
+            </div>
+            <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded">
+              <div className="text-sm text-gray-600 dark:text-gray-400">최대</div>
+              <div className="text-lg font-bold text-red-600 dark:text-red-400">{stats.max.toFixed(1)}</div>
+            </div>
+          </>
+        )}
       </div>
 
       <ResponsiveContainer width="100%" height={300}>
