@@ -19,10 +19,8 @@ export interface StepsData {
 export function getGoogleAuthUrl(): string {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   
-  // 자동으로 올바른 URL 감지
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                  (typeof window !== 'undefined' ? window.location.origin : 'https://health-alpha-nu.vercel.app');
-  const redirectUri = `${baseUrl}/api/auth/google/callback`;
+  // Vercel 프로덕션 URL 고정 사용
+  const redirectUri = 'https://health-alpha-nu.vercel.app/api/auth/google/callback';
   
   const scope = 'https://www.googleapis.com/auth/fitness.activity.read';
   
@@ -44,7 +42,7 @@ export function getGoogleAuthUrl(): string {
 export async function exchangeCodeForToken(code: string): Promise<GoogleFitCredentials> {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`;
+  const redirectUri = 'https://health-alpha-nu.vercel.app/api/auth/google/callback';
 
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
