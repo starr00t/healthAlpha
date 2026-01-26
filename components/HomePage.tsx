@@ -25,6 +25,7 @@ export default function HomePage() {
   const { goals, getActiveGoals } = useGoalsStore();
   const { events } = useCalendarStore();
   const [lastAIAdvice, setLastAIAdvice] = useState<any>(null);
+  const [healthAnalysisAdvices, setHealthAnalysisAdvices] = useState<any[]>([]);
 
   useEffect(() => {
     // AI 조언 히스토리 로드
@@ -34,6 +35,13 @@ export default function HomePage() {
         const history = JSON.parse(stored);
         if (history.length > 0) {
           setLastAIAdvice(history[0]);
+          
+          // 건강데이터 분석 카테고리의 조언들만 필터링
+          const analysisCategories = ['종합 건강 분석', '체중 분석', '혈압 분석', '혈당 분석'];
+          const analysisAdvices = history.filter((advice: any) => 
+            analysisCategories.includes(advice.category)
+          );
+          setHealthAnalysisAdvices(analysisAdvices);
         }
       }
     }
@@ -233,7 +241,77 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 최근 건강 조언 */}
+      {/* 건강데이터 분석 결과 */}
+      {healthAnalysisAdvices.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
+            📊 건강데이터 분석
+          </h2>
+          <div className="space-y-4">
+            {healthAnalysisAdvices.map((advice, index) => {
+              const adviceDate = new Date(advice.timestamp);
+              const daysAgo = Math.floor((today.getTime() - adviceDate.getTime()) / (1000 * 60 * 60 * 24));
+              
+              return (
+                <div key={index} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                  {/* 카테고리 헤더 */}
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="px-3 py-1 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm font-medium">
+                      {advice.category}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {daysAgo === 0 ? '오늘' : `${daysAgo}일 전`}
+                    </span>
+                  </div>
+
+                  {/* 조언 내용 */}
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-lg p-4 mb-3">
+                    <p className="text-sm text-gray-800 dark:text-gray-100 leading-relaxed whitespace-pre-wrap">
+                      {advice.advice}
+                    </p>
+                  </div>
+
+                  {/* 권장사항 */}
+                  {advice.recommendations && advice.recommendations.length > 0 && (
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 mb-3">
+                      <h4 className="text-xs font-semibold text-green-800 dark:text-green-200 mb-2">
+                        📋 권장사항
+                      </h4>
+                      <ul className="space-y-1">
+                        {advice.recommendations.map((rec: string, i: number) => (
+                          <li key={i} className="text-xs text-green-700 dark:text-green-300 flex items-start gap-1">
+                            <span className="text-green-600 dark:text-green-400">•</span>
+                            <span>{rec}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* 주의사항 */}
+                  {advice.warnings && advice.warnings.length > 0 && (
+                    <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                      <h4 className="text-xs font-semibold text-red-800 dark:text-red-200 mb-2">
+                        ⚠️ 주의사항
+                      </h4>
+                      <ul className="space-y-1">
+                        {advice.warnings.map((warning: string, i: number) => (
+                          <li key={i} className="text-xs text-red-700 dark:text-red-300 flex items-start gap-1">
+                            <span className="text-red-600 dark:text-red-400">•</span>
+                            <span>{warning}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 최근 건강 조언 (AI 질문) */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
           💡 최근 건강 조언
