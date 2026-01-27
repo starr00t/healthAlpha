@@ -458,6 +458,11 @@ export default function HealthCalendar() {
             
             // 날짜별 최신 기록 가져오기
             const latestRecord = dateRecords.length > 0 ? dateRecords[dateRecords.length - 1] : null;
+            
+            // 디버깅: latestRecord 확인
+            if (latestRecord && date.getDate() === 27) {
+              console.log('📋 27일 latestRecord:', latestRecord);
+            }
 
             return (
               <div
