@@ -10,6 +10,8 @@ export default function AuthForm() {
     password: '',
     name: '',
   });
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -37,6 +39,11 @@ export default function AuthForm() {
           setLoading(false);
           return;
         }
+        if (!agreedToTerms || !agreedToPrivacy) {
+          setError('이용약관 및 개인정보처리방침에 동의해주세요.');
+          setLoading(false);
+          return;
+        }
         const success = await register(formData.email, formData.password, formData.name);
         if (!success) {
           setError('이미 존재하는 이메일입니다.');
@@ -53,6 +60,8 @@ export default function AuthForm() {
     setIsLogin(!isLogin);
     setError('');
     setFormData({ email: '', password: '', name: '' });
+    setAgreedToTerms(false);
+    setAgreedToPrivacy(false);
   };
 
   return (
@@ -134,6 +143,52 @@ export default function AuthForm() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
+
+          {!isLogin && (
+            <div className="space-y-3">
+              <div className="flex items-start">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label htmlFor="terms" className="ml-2 text-sm text-gray-700">
+                  <a 
+                    href="/terms" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary-600 hover:text-primary-700 font-medium underline"
+                  >
+                    이용약관
+                  </a>
+                  에 동의합니다. (필수)
+                </label>
+              </div>
+              
+              <div className="flex items-start">
+                <input
+                  type="checkbox"
+                  id="privacy"
+                  checked={agreedToPrivacy}
+                  onChange={(e) => setAgreedToPrivacy(e.target.checked)}
+                  className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label htmlFor="privacy" className="ml-2 text-sm text-gray-700">
+                  <a 
+                    href="/privacy" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary-600 hover:text-primary-700 font-medium underline"
+                  >
+                    개인정보처리방침
+                  </a>
+                  에 동의합니다. (필수)
+                </label>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">

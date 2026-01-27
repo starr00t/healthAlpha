@@ -17,13 +17,14 @@ import AIHealthAdvisor from '@/components/AIHealthAdvisor';
 import ProfileSettings from '@/components/ProfileSettings';
 import HelpPanel from '@/components/HelpPanel';
 import HomePage from '@/components/HomePage';
+import UserSettings from '@/components/UserSettings';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useHealthStore } from '@/store/healthStore';
 import { useThemeStore } from '@/store/themeStore';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'home' | 'record' | 'calendar' | 'trends' | 'stats' | 'goals' | 'manage' | 'profile' | 'ai' | 'help' | 'admin'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'record' | 'calendar' | 'trends' | 'stats' | 'goals' | 'manage' | 'profile' | 'ai' | 'help' | 'settings' | 'admin'>('home');
   const { isAuthenticated, user, logout } = useAuthStore();
   const { setUserId, clearRecords } = useHealthStore();
   const { isDarkMode } = useThemeStore();
@@ -207,6 +208,16 @@ export default function Home() {
               >
                 📖 도움말
               </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'settings'
+                    ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                ⚙️ 설정
+              </button>
               {user?.isAdmin && (
                 <button
                   onClick={() => setActiveTab('admin')}
@@ -294,6 +305,12 @@ export default function Home() {
         {activeTab === 'help' && (
           <div className="max-w-5xl mx-auto">
             <HelpPanel />
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="max-w-3xl mx-auto">
+            <UserSettings />
           </div>
         )}
 
