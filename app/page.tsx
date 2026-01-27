@@ -24,6 +24,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useCalendarStore } from '@/store/calendarStore';
 import { useGoalsStore } from '@/store/goalsStore';
 import { useHomeLayoutStore } from '@/store/homeLayoutStore';
+import { useNoteStore } from '@/store/noteStore';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'home' | 'record' | 'calendar' | 'trends' | 'stats' | 'goals' | 'manage' | 'ai' | 'help' | 'settings' | 'admin'>('home');
@@ -32,6 +33,7 @@ export default function Home() {
   const calendarStore = useCalendarStore();
   const goalsStore = useGoalsStore();
   const homeLayoutStore = useHomeLayoutStore();
+  const noteStore = useNoteStore();
   const { isDarkMode } = useThemeStore();
 
   const handleLogout = () => {
@@ -48,7 +50,6 @@ export default function Home() {
       document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
-
   // 사용자 로그인/로그아웃 시 데이터 동기화
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -56,11 +57,13 @@ export default function Home() {
       calendarStore.setUserId(user.id, user.email);
       goalsStore.setUserId(user.id, user.email);
       homeLayoutStore.setUserId(user.id, user.email);
+      noteStore.setUserId(user.id, user.email);
     } else {
       healthStore.clearRecords();
       calendarStore.clearData();
       goalsStore.clearData();
     }
+  }, [isAuthenticated, user]);
   }, [isAuthenticated, user]);
 
   // 로그인하지 않은 경우 로그인 화면 표시

@@ -2,15 +2,17 @@
 
 import { useHealthStore } from '@/store/healthStore';
 import { useCalendarStore } from '@/store/calendarStore';
+import { useNoteStore } from '@/store/noteStore';
 import { useState, useMemo, useEffect } from 'react';
 import { HealthRecord } from '@/types/health';
 import { categoryColors, moodEmojis } from '@/types/calendar';
 import EventForm from './EventForm';
 import DiaryForm from './DiaryForm';
 import DiaryDetailModal from './DiaryDetailModal';
+import NoteForm from './NoteForm';
 
 type ViewMode = 'month' | 'week';
-type ModalType = 'health' | 'event' | 'diary' | null;
+type ModalType = 'health' | 'event' | 'diary' | 'note' | null;
 
 export default function HealthCalendar() {
   const records = useHealthStore((state) => state.records);
@@ -18,20 +20,24 @@ export default function HealthCalendar() {
   const events = useCalendarStore((state) => state.events);
   const diaries = useCalendarStore((state) => state.diaries);
   const setCalendarUserId = useCalendarStore((state) => state.setUserId);
+  const notes = useNoteStore((state) => state.notes);
+  const getNotesByDate = useNoteStore((state) => state.getNotesByDate);
+  const setNoteUserId = useNoteStore((state) => state.setUserId);
   
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [modalType, setModalType] = useState<ModalType>(null);
   const [modalDate, setModalDate] = useState<Date | null>(null);
-  const [editEventId, setEditEventId] = useState<string | null>(null);
-  const [viewDiaryId, setViewDiaryId] = useState<string | null>(null);
-
   // 사용자 ID 동기화
   useEffect(() => {
     const userId = useHealthStore.getState().userId;
     const userEmail = useHealthStore.getState().userEmail;
     if (userId) {
+      setCalendarUserId(userId, userEmail);
+      setNoteUserId(userId, userEmail);
+    }
+  }, [setCalendarUserId, setNoteUserId]);
       setCalendarUserId(userId, userEmail);
     }
   }, [setCalendarUserId]);
@@ -658,8 +664,66 @@ export default function HealthCalendar() {
               >
                 + 다이어리
               </button>
+              <button
+                onClick={() => {
+                  setModalType('note');
+                  setModalDate(selectedDate);
+                }}
+                className="flex-1 min-w-[100px] px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors text-sm font-medium"
+              >
+                + 노트
+              </button>
             </div>
           </div>
+
+          {/* 노트 목록 */}
+          {(() => {
+            const dateNotes = getNotesByDate(selectedDate.toISOString());
+            return dateNotes.length > 0 && (
+              <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    📝 노트 ({dateNotes.length})
+                  </h4>
+                </div>
+                <div className="space-y-3">
+                  {dateNotes.map((note) => (
+                    <div key={note.id} className="bg-white dark:bg-gray-700 rounded-lg p-3 border border-amber-200 dark:border-amber-700">
+                      <div className="flex items-start justify-between mb-2">
+                        <h5 className="font-semibold text-gray-800 dark:text-white">{note.title}</h5>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setModalType('note');
+                              setModalDate(selectedDate);
+                              setEditEventId(note.id); // noteId를 임시로 eventId에 저장
+                            }}
+                            className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700"
+                          >
+                            수정
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm('이 노트를 삭제하시겠습니까?')) {
+                                useNoteStore.getState().deleteNote(note.id);
+                              }
+                            }}
+                            className="text-xs text-red-600 dark:text-red-400 hover:text-red-700"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{note.content}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                        {new Date(note.updatedAt).toLocaleString('ko-KR')}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* 다이어리 */}
           {selectedDateDiary && (
@@ -923,7 +987,7 @@ export default function HealthCalendar() {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
-                  })} {modalType === 'health' ? '건강 기록' : modalType === 'event' ? (editEventId ? '일정 수정' : '일정 추가') : '다이어리'} {editEventId ? '' : '추가'}
+                  })} {modalType === 'health' ? '건강 기록' : modalType === 'event' ? (editEventId ? '일정 수정' : '일정 추가') : modalType === 'note' ? '노트 추가' : '다이어리'} {editEventId ? '' : '추가'}
                 </h3>
                 <button
                   onClick={closeModal}
@@ -938,6 +1002,7 @@ export default function HealthCalendar() {
               {modalType === 'health' && <QuickHealthForm date={modalDate} onSuccess={handleModalSuccess} />}
               {modalType === 'event' && <EventForm date={modalDate} onClose={closeModal} onSuccess={handleModalSuccess} eventId={editEventId || undefined} />}
               {modalType === 'diary' && <DiaryForm date={modalDate} onClose={closeModal} onSuccess={handleModalSuccess} />}
+              {modalType === 'note' && <NoteForm date={modalDate} onClose={closeModal} onSuccess={handleModalSuccess} noteId={editEventId || undefined} />}
             </div>
           </div>
         </div>
