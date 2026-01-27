@@ -98,10 +98,24 @@ export const useHealthStore = create<HealthStore>()(
           
           if (response.ok) {
             const { records: serverRecords } = await response.json();
-            if (serverRecords && serverRecords.length > 0) {
-              set({ records: serverRecords, lastSyncTime: new Date().toISOString() });
-              saveUserRecords(userId, serverRecords);
-              console.log('✅ 서버 데이터 다운로드 완료:', serverRecords.length, '개');
+            
+            // 빈 데이터 필터링
+            const validRecords = serverRecords.filter((record: HealthRecord) => {
+              return record.weight || record.bloodPressure || record.bloodSugar || 
+                     (record.steps && record.steps > 0) || 
+                     (record.calories && record.calories > 0);
+            });
+            
+            if (validRecords.length > 0) {
+              set({ records: validRecords, lastSyncTime: new Date().toISOString() });
+              saveUserRecords(userId, validRecords);
+              console.log('✅ 서버 데이터 다운로드 완료:', validRecords.length, '개');
+              
+              // 빈 데이터가 제거된 경우 서버에 다시 동기화
+              if (validRecords.length < serverRecords.length) {
+                console.log('🧹 빈 데이터', serverRecords.length - validRecords.length, '개 제거됨');
+                setTimeout(() => get().syncToServer(), 1000);
+              }
             }
           }
         } catch (error) {
@@ -115,6 +129,17 @@ export const useHealthStore = create<HealthStore>()(
       
       addRecord: (record) => {
         const { userId } = get();
+        
+        // 빈 데이터 검증: 주요 필드 중 하나라도 값이 있어야 함
+        const hasData = record.weight || record.bloodPressure || record.bloodSugar || 
+                       (record.steps && record.steps > 0) || 
+                       (record.calories && record.calories > 0);
+        
+        if (!hasData) {
+          console.warn('⚠️ 빈 건강 기록은 저장되지 않습니다.');
+          return;
+        }
+        
         const newRecord: HealthRecord = {
           ...record,
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
