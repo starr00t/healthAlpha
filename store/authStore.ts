@@ -8,6 +8,7 @@ interface AuthStore {
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string) => Promise<boolean>;
   logout: () => void;
+  updateUser: (user: User) => void;
   updateProfile: (name: string) => void;
   updateHealthProfile: (profile: UserProfile) => void;
   updateSubscription: (subscription: UserSubscription) => void;
@@ -244,6 +245,10 @@ export const useAuthStore = create<AuthStore>()(
           user: null,
           isAuthenticated: false,
         });
+      },
+
+      updateUser: (user: User) => {
+        set({ user });
       },
 
       updateProfile: (name: string) => {
