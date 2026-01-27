@@ -456,8 +456,19 @@ export default function HealthCalendar() {
             const dateEvents = getEventsForDate(date);
             const dateDiary = getDiaryForDate(date);
             
-            // 날짜별 최신 기록 가져오기
-            const latestRecord = dateRecords.length > 0 ? dateRecords[dateRecords.length - 1] : null;
+            // 날짜별 최신 기록 가져오기 (데이터가 있는 기록 우선)
+            let latestRecord = null;
+            if (dateRecords.length > 0) {
+              // weight, bloodPressure, bloodSugar 중 하나라도 있는 기록 찾기
+              const recordsWithData = dateRecords.filter(r => 
+                r.weight || r.bloodPressure || r.bloodSugar
+              );
+              
+              // 데이터가 있는 기록이 있으면 그 중 최신, 없으면 전체 중 최신
+              latestRecord = recordsWithData.length > 0 
+                ? recordsWithData[recordsWithData.length - 1]
+                : dateRecords[dateRecords.length - 1];
+            }
             
             // 디버깅: latestRecord 확인
             if (latestRecord && date.getDate() === 27) {
