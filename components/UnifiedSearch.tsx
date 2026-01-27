@@ -3,14 +3,16 @@
 import { useState, useMemo } from 'react';
 import { useHealthStore } from '@/store/healthStore';
 import { useCalendarStore } from '@/store/calendarStore';
+import { useNoteStore } from '@/store/noteStore';
 import { HealthRecord } from '@/types/health';
 import { DiaryEntry, CalendarEvent } from '@/types/calendar';
+import { Note } from '@/types/note';
 
-type SearchCategory = 'all' | 'health' | 'diary' | 'event';
+type SearchCategory = 'all' | 'health' | 'diary' | 'event' | 'note';
 
 interface SearchResult {
-  type: 'health' | 'diary' | 'event';
-  data: HealthRecord | DiaryEntry | CalendarEvent;
+  type: 'health' | 'diary' | 'event' | 'note';
+  data: HealthRecord | DiaryEntry | CalendarEvent | Note;
   matchedFields: string[];
 }
 
@@ -21,6 +23,7 @@ export default function UnifiedSearch() {
   
   const { records: healthRecords } = useHealthStore();
   const { diaries, events } = useCalendarStore();
+  const { notes } = useNoteStore();
 
   // 검색 로직
   const searchResults = useMemo(() => {
@@ -141,13 +144,41 @@ export default function UnifiedSearch() {
       });
     }
 
+    // 노트 검색
+    if (category === 'all' || category === 'note') {
+      notes.forEach((note) => {
+        if (!isInDateRange(note.date)) return;
+        
+        const matchedFields: string[] = [];
+        
+        // 날짜 검색
+        if (note.date.includes(query)) {
+          matchedFields.push('날짜');
+        }
+        
+        // 제목 검색
+        if (note.title.toLowerCase().includes(query)) {
+          matchedFields.push('제목');
+        }
+        
+        // 내용 검색
+        if (note.content.toLowerCase().includes(query)) {
+          matchedFields.push('내용');
+        }
+
+        if (matchedFields.length > 0 || (!query && isInDateRange(note.date))) {
+          results.push({ type: 'note', data: note, matchedFields });
+        }
+      });
+    }
+
     // 날짜순 정렬 (최신순)
     return results.sort((a, b) => {
       const dateA = a.data.date;
       const dateB = b.data.date;
       return new Date(dateB).getTime() - new Date(dateA).getTime();
     });
-  }, [searchQuery, category, dateFilter, healthRecords, diaries, events]);
+  }, [searchQuery, category, dateFilter, healthRecords, diaries, events, notes]);
 
   // 하이라이트 텍스트
   const highlightText = (text: string, query: string) => {
@@ -186,6 +217,7 @@ export default function UnifiedSearch() {
             { value: 'health', label: '건강 기록', icon: '💉' },
             { value: 'diary', label: '다이어리', icon: '📔' },
             { value: 'event', label: '일정', icon: '📅' },
+            { value: 'note', label: '노트', icon: '📝' },
           ].map((cat) => (
             <button
               key={cat.value}
@@ -271,7 +303,7 @@ export default function UnifiedSearch() {
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               <div className="text-6xl mb-4">💡</div>
               <p className="text-lg">검색어를 입력하거나 날짜를 선택하세요</p>
-              <p className="text-sm mt-2">건강 기록, 다이어리, 일정을 통합 검색할 수 있습니다</p>
+              <p className="text-sm mt-2">건강 기록, 다이어리, 일정, 노트를 통합 검색할 수 있습니다</p>
             </div>
           )}
 
@@ -428,6 +460,42 @@ export default function UnifiedSearch() {
                       </span>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* 노트 */}
+              {result.type === 'note' && 'title' in result.data && 'content' in result.data && (
+                <div>
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">📝</span>
+                      <div>
+                        <h4 className="font-semibold text-gray-800 dark:text-white">
+                          {highlightText(result.data.title, searchQuery)}
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {highlightText(result.data.date, searchQuery)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {result.matchedFields.map((field) => (
+                        <span
+                          key={field}
+                          className="px-2 py-1 bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 
+                            text-xs rounded-full"
+                        >
+                          {field}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3 whitespace-pre-wrap">
+                    {highlightText(result.data.content, searchQuery)}
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                    수정: {new Date(result.data.updatedAt).toLocaleString('ko-KR')}
+                  </p>
                 </div>
               )}
             </div>
