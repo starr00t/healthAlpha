@@ -156,7 +156,14 @@ export default function HealthCalendar() {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const dateKey = `${year}-${month}-${day}`;
-    return recordsByDate.get(dateKey) || [];
+    const records = recordsByDate.get(dateKey) || [];
+    
+    // 디버깅: 특정 날짜의 기록 조회
+    if (records.length > 0) {
+      console.log(`🔍 ${dateKey} 기록 조회:`, records.length, '개');
+    }
+    
+    return records;
   };
 
   // 건강 상태 색상 (히트맵)
