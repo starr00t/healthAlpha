@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 
 export default function GoalsManager() {
   const { user } = useAuthStore();
-  const { goals, addGoal, updateGoal, deleteGoal, getActiveGoals, syncToServer, loadFromServer } = useGoalsStore();
+  const { goals, addGoal, updateGoal, deleteGoal, getActiveGoals, syncToServer, syncFromServer } = useGoalsStore();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     type: 'weight' as 'weight' | 'bloodPressure' | 'bloodSugar' | 'steps' | 'calories',
@@ -19,9 +19,9 @@ export default function GoalsManager() {
   // 서버에서 데이터 로드
   useEffect(() => {
     if (user?.email) {
-      loadFromServer(user.email);
+      syncFromServer();
     }
-  }, [user?.email, loadFromServer]);
+  }, [user?.email, syncFromServer]);
 
   if (!user) return null;
 
@@ -63,11 +63,6 @@ export default function GoalsManager() {
   const handleDelete = async (goalId: string) => {
     if (confirm('이 목표를 삭제하시겠습니까?')) {
       deleteGoal(goalId);
-      
-      // 서버에 동기화
-      if (user.email) {
-        await syncToServer(user.email);
-      }
     }
   };
 

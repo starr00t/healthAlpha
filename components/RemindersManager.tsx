@@ -8,7 +8,7 @@ const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 export default function RemindersManager() {
   const { user } = useAuthStore();
-  const { reminders, addReminder, updateReminder, deleteReminder, getActiveReminders, syncToServer, loadFromServer } =
+  const { reminders, addReminder, updateReminder, deleteReminder, getActiveReminders, syncToServer, syncFromServer } =
     useGoalsStore();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -21,9 +21,9 @@ export default function RemindersManager() {
   // 서버에서 데이터 로드
   useEffect(() => {
     if (user?.email) {
-      loadFromServer(user.email);
+      syncFromServer();
     }
-  }, [user?.email, loadFromServer]);
+  }, [user?.email, syncFromServer]);
 
   useEffect(() => {
     if ('Notification' in window) {
@@ -79,21 +79,11 @@ export default function RemindersManager() {
   const handleDelete = async (reminderId: string) => {
     if (confirm('이 알림을 삭제하시겠습니까?')) {
       deleteReminder(reminderId);
-      
-      // 서버에 동기화
-      if (user.email) {
-        await syncToServer(user.email);
-      }
     }
   };
 
-  const toggleReminderActive = async (reminderId: string, isActive: boolean) => {
+  const toggleReminderActive = (reminderId: string, isActive: boolean) => {
     updateReminder(reminderId, { isActive: !isActive });
-    
-    // 서버에 동기화
-    if (user.email) {
-      await syncToServer(user.email);
-    }
   };
 
   return (
