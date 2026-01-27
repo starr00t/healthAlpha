@@ -50,6 +50,7 @@ export default function Home() {
       document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
+
   // 사용자 로그인/로그아웃 시 데이터 동기화
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -63,7 +64,6 @@ export default function Home() {
       calendarStore.clearData();
       goalsStore.clearData();
     }
-  }, [isAuthenticated, user]);
   }, [isAuthenticated, user]);
 
   // 로그인하지 않은 경우 로그인 화면 표시
