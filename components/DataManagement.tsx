@@ -2,6 +2,7 @@
 
 import { useHealthStore } from '@/store/healthStore';
 import { useCalendarStore } from '@/store/calendarStore';
+import { useNoteStore } from '@/store/noteStore';
 import { useAuthStore } from '@/store/authStore';
 import { useState } from 'react';
 
@@ -17,16 +18,18 @@ interface BackupData {
   healthRecords: any[];
   diaries: any[];
   events: any[];
+  notes: any[];
 }
 
 export default function DataManagement() {
   const { records: healthRecords } = useHealthStore();
   const { diaries, events } = useCalendarStore();
+  const { notes } = useNoteStore();
   const { user } = useAuthStore();
   const [importStatus, setImportStatus] = useState<string>('');
   const [showPreview, setShowPreview] = useState(false);
 
-  // 전체 데이터 내보내기 (건강기록 + 다이어리 + 일정 + 프로필)
+  // 전체 데이터 내보내기 (건강기록 + 다이어리 + 일정 + 노트 + 프로필)
   const handleExportAll = () => {
     if (!user) return;
 
@@ -42,6 +45,7 @@ export default function DataManagement() {
       healthRecords,
       diaries,
       events,
+      notes,
     };
 
     const jsonData = JSON.stringify(backupData, null, 2);
@@ -91,11 +95,14 @@ export default function DataManagement() {
           // 전체 백업 복원
           if (window.confirm('⚠️ 전체 데이터를 복원하시겠습니까? 현재 데이터가 모두 대체됩니다.')) {
             useHealthStore.getState().importData(JSON.stringify(data.healthRecords));
-            // 다이어리와 이벤트는 store에 직접 설정
+            // 다이어리, 이벤트, 노트는 store에 직접 설정
             useCalendarStore.setState({ 
               diaries: data.diaries,
               events: data.events,
             });
+            if (data.notes) {
+              useNoteStore.setState({ notes: data.notes });
+            }
             setImportStatus('✅ 전체 데이터를 성공적으로 복원했습니다!');
           }
         } else if (Array.isArray(data)) {
@@ -139,6 +146,7 @@ export default function DataManagement() {
       healthRecords,
       diaries,
       events,
+      notes,
     };
 
     const jsonData = JSON.stringify(backupData, null, 2);
@@ -175,6 +183,7 @@ export default function DataManagement() {
       healthRecords,
       diaries,
       events,
+      notes,
     };
 
     const jsonData = JSON.stringify(backupData, null, 2);
@@ -185,8 +194,8 @@ export default function DataManagement() {
   };
 
   // 데이터 통계
-  const totalRecords = healthRecords.length + diaries.length + events.length;
-  const dataSize = new Blob([JSON.stringify({ healthRecords, diaries, events })]).size;
+  const totalRecords = healthRecords.length + diaries.length + events.length + notes.length;
+  const dataSize = new Blob([JSON.stringify({ healthRecords, diaries, events, notes })]).size;
   const dataSizeKB = (dataSize / 1024).toFixed(2);
 
   return (
@@ -194,7 +203,7 @@ export default function DataManagement() {
       <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">💾 데이터 관리</h2>
 
       {/* 데이터 통계 */}
-      <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="mb-6 grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 p-4 rounded-lg">
           <div className="text-sm text-blue-600 dark:text-blue-300 font-medium">건강 기록</div>
           <div className="text-2xl font-bold text-blue-800 dark:text-blue-100">{healthRecords.length}</div>
@@ -206,6 +215,10 @@ export default function DataManagement() {
         <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 p-4 rounded-lg">
           <div className="text-sm text-green-600 dark:text-green-300 font-medium">일정</div>
           <div className="text-2xl font-bold text-green-800 dark:text-green-100">{events.length}</div>
+        </div>
+        <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900 dark:to-amber-800 p-4 rounded-lg">
+          <div className="text-sm text-amber-600 dark:text-amber-300 font-medium">노트</div>
+          <div className="text-2xl font-bold text-amber-800 dark:text-amber-100">{notes.length}</div>
         </div>
         <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900 dark:to-orange-800 p-4 rounded-lg">
           <div className="text-sm text-orange-600 dark:text-orange-300 font-medium">데이터 크기</div>
@@ -221,7 +234,7 @@ export default function DataManagement() {
             전체 백업 (권장)
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-            건강 기록, 다이어리, 일정을 모두 포함한 완전한 백업 파일을 생성합니다.
+            건강 기록, 다이어리, 일정, 노트를 모두 포함한 완전한 백업 파일을 생성합니다.
           </p>
           <div className="flex flex-wrap gap-2">
             <button
@@ -254,6 +267,7 @@ export default function DataManagement() {
                 healthRecords: `${healthRecords.length}개 항목`,
                 diaries: `${diaries.length}개 항목`,
                 events: `${events.length}개 항목`,
+                notes: `${notes.length}개 항목`,
               }, null, 2)}
             </pre>
           </div>
