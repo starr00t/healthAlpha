@@ -31,31 +31,63 @@ export default function HomePage() {
   const [healthAnalysisAdvices, setHealthAnalysisAdvices] = useState<any[]>([]);
 
   useEffect(() => {
-    // AI 조언 히스토리 로드 (userId 기반 필터링)
-    if (typeof window !== 'undefined' && user) {
-      const stored = localStorage.getItem('health-alpha-ai-history');
-      if (stored) {
-        const history = JSON.parse(stored);
-        // 현재 로그인한 사용자의 조언만 필터링
-        const userHistory = history.filter((advice: any) => 
-          advice.userId === user.id || !advice.userId // 이전 데이터 호환성
-        );
+    // AI 조언 히스토리 로드 (userId 기반 필터링 + 서버 동기화)
+    const loadAIHistory = async () => {
+      if (typeof window !== 'undefined' && user) {
+        // 먼저 서버에서 로드 시도
+        try {
+          const response = await fetch(`/api/preferences?email=${encodeURIComponent(user.email)}&type=aiHistory`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.preferences && Array.isArray(data.preferences)) {
+              const userHistory = data.preferences.filter((advice: any) => 
+                advice.userId === user.id
+              );
+              
+              if (userHistory.length > 0) {
+                setLastAIAdvice(userHistory[0]);
+                
+                const analysisCategories = ['종합 건강 분석', '체중 분석', '혈압 분석', '혈당 분석'];
+                const analysisAdvices = userHistory.filter((advice: any) => 
+                  analysisCategories.includes(advice.category)
+                );
+                setHealthAnalysisAdvices(analysisAdvices);
+                
+                // 서버 데이터를 로컬에도 저장
+                localStorage.setItem('health-alpha-ai-history', JSON.stringify(data.preferences));
+                return;
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load AI history from server:', error);
+        }
         
-        if (userHistory.length > 0) {
-          setLastAIAdvice(userHistory[0]);
-          
-          // 건강데이터 분석 카테고리의 조언들만 필터링
-          const analysisCategories = ['종합 건강 분석', '체중 분석', '혈압 분석', '혈당 분석'];
-          const analysisAdvices = userHistory.filter((advice: any) => 
-            analysisCategories.includes(advice.category)
+        // 서버 로드 실패 시 로컬에서 로드
+        const stored = localStorage.getItem('health-alpha-ai-history');
+        if (stored) {
+          const history = JSON.parse(stored);
+          const userHistory = history.filter((advice: any) => 
+            advice.userId === user.id || !advice.userId
           );
-          setHealthAnalysisAdvices(analysisAdvices);
-        } else {
-          setLastAIAdvice(null);
-          setHealthAnalysisAdvices([]);
+          
+          if (userHistory.length > 0) {
+            setLastAIAdvice(userHistory[0]);
+            
+            const analysisCategories = ['종합 건강 분석', '체중 분석', '혈압 분석', '혈당 분석'];
+            const analysisAdvices = userHistory.filter((advice: any) => 
+              analysisCategories.includes(advice.category)
+            );
+            setHealthAnalysisAdvices(analysisAdvices);
+          } else {
+            setLastAIAdvice(null);
+            setHealthAnalysisAdvices([]);
+          }
         }
       }
-    }
+    };
+    
+    loadAIHistory();
   }, [user]);
 
   if (!user) {
@@ -203,35 +235,63 @@ export default function HomePage() {
         </h2>
         {latestRecord ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {latestRecord.weight && (
+            {latestRecord.weight ? (
               <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                 <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">체중</div>
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {latestRecord.weight} <span className="text-sm">kg</span>
                 </div>
               </div>
+            ) : (
+              <div className="bg-gray-50 dark:bg-gray-700/20 p-4 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                <div className="text-xs text-gray-500 dark:text-gray-500 mb-1">체중</div>
+                <div className="text-lg font-medium text-gray-400 dark:text-gray-500">
+                  미기록
+                </div>
+              </div>
             )}
-            {latestRecord.bloodPressure && (
+            {latestRecord.bloodPressure ? (
               <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
                 <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">혈압</div>
                 <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                   {latestRecord.bloodPressure.systolic}/{latestRecord.bloodPressure.diastolic}
                 </div>
               </div>
+            ) : (
+              <div className="bg-gray-50 dark:bg-gray-700/20 p-4 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                <div className="text-xs text-gray-500 dark:text-gray-500 mb-1">혈압</div>
+                <div className="text-lg font-medium text-gray-400 dark:text-gray-500">
+                  미기록
+                </div>
+              </div>
             )}
-            {latestRecord.steps && (
+            {latestRecord.steps ? (
               <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
                 <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">걸음수</div>
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {latestRecord.steps.toLocaleString()}
                 </div>
               </div>
+            ) : (
+              <div className="bg-gray-50 dark:bg-gray-700/20 p-4 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                <div className="text-xs text-gray-500 dark:text-gray-500 mb-1">걸음수</div>
+                <div className="text-lg font-medium text-gray-400 dark:text-gray-500">
+                  미기록
+                </div>
+              </div>
             )}
-            {latestRecord.calories && (
+            {latestRecord.calories ? (
               <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
                 <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">칼로리</div>
                 <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                   {latestRecord.calories} <span className="text-sm">kcal</span>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-50 dark:bg-gray-700/20 p-4 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                <div className="text-xs text-gray-500 dark:text-gray-500 mb-1">칼로리</div>
+                <div className="text-lg font-medium text-gray-400 dark:text-gray-500">
+                  미기록
                 </div>
               </div>
             )}

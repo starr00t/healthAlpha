@@ -21,11 +21,17 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useHealthStore } from '@/store/healthStore';
 import { useThemeStore } from '@/store/themeStore';
+import { useCalendarStore } from '@/store/calendarStore';
+import { useGoalsStore } from '@/store/goalsStore';
+import { useHomeLayoutStore } from '@/store/homeLayoutStore';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'home' | 'record' | 'calendar' | 'trends' | 'stats' | 'goals' | 'manage' | 'ai' | 'help' | 'settings' | 'admin'>('home');
   const { isAuthenticated, user, logout } = useAuthStore();
-  const { setUserId, clearRecords } = useHealthStore();
+  const healthStore = useHealthStore();
+  const calendarStore = useCalendarStore();
+  const goalsStore = useGoalsStore();
+  const homeLayoutStore = useHomeLayoutStore();
   const { isDarkMode } = useThemeStore();
 
   const handleLogout = () => {
@@ -46,11 +52,16 @@ export default function Home() {
   // 사용자 로그인/로그아웃 시 데이터 동기화
   useEffect(() => {
     if (isAuthenticated && user) {
-      setUserId(user.id, user.email);
+      healthStore.setUserId(user.id, user.email);
+      calendarStore.setUserId(user.id, user.email);
+      goalsStore.setUserId(user.id, user.email);
+      homeLayoutStore.setUserId(user.id, user.email);
     } else {
-      clearRecords();
+      healthStore.clearRecords();
+      calendarStore.clearData();
+      goalsStore.clearData();
     }
-  }, [isAuthenticated, user, setUserId, clearRecords]);
+  }, [isAuthenticated, user]);
 
   // 로그인하지 않은 경우 로그인 화면 표시
   if (!isAuthenticated) {

@@ -9,10 +9,11 @@ const redis = new Redis({
 // GET - 목표 및 알림 조회
 export async function GET(request: NextRequest) {
   try {
-    const email = request.headers.get('x-user-email');
+    const { searchParams } = new URL(request.url);
+    const email = searchParams.get('email');
     
     if (!email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
     const goalsData = await redis.get(`goals:${email}`);
@@ -32,13 +33,11 @@ export async function GET(request: NextRequest) {
 // POST - 목표 및 알림 저장
 export async function POST(request: NextRequest) {
   try {
-    const email = request.headers.get('x-user-email');
+    const { email, goals, reminders } = await request.json();
     
     if (!email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
-
-    const { goals, reminders } = await request.json();
 
     await redis.set(`goals:${email}`, { goals, reminders });
 

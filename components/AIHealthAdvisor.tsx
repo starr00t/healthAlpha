@@ -145,7 +145,7 @@ export default function AIHealthAdvisor() {
   };
 
   // AI 조언을 히스토리에 저장하는 함수
-  const saveAIAdviceToHistory = (advice: any) => {
+  const saveAIAdviceToHistory = async (advice: any) => {
     try {
       if (!user) return;
 
@@ -162,6 +162,19 @@ export default function AIHealthAdvisor() {
       const newHistory = [adviceWithUser, ...history].slice(0, 10);
       
       localStorage.setItem('health-alpha-ai-history', JSON.stringify(newHistory));
+      
+      // 서버에 동기화
+      if (user.email) {
+        await fetch('/api/preferences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: user.email,
+            type: 'aiHistory',
+            data: newHistory,
+          }),
+        });
+      }
     } catch (error) {
       console.error('Failed to save AI advice history:', error);
     }
