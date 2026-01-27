@@ -74,12 +74,17 @@ export default function HealthCalendar() {
   const recordsByDate = useMemo(() => {
     const map = new Map<string, HealthRecord[]>();
     records.forEach((record) => {
-      const dateKey = record.date.split('T')[0];
+      // ISO 날짜 형식 또는 YYYY-MM-DD 형식 모두 처리
+      const dateKey = record.date.includes('T') 
+        ? record.date.split('T')[0] 
+        : record.date;
+      
       if (!map.has(dateKey)) {
         map.set(dateKey, []);
       }
       map.get(dateKey)!.push(record);
     });
+    console.log('📅 캘린더 기록 매핑:', Array.from(map.entries()));
     return map;
   }, [records]);
 
