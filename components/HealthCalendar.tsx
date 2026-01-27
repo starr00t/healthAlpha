@@ -84,7 +84,14 @@ export default function HealthCalendar() {
       }
       map.get(dateKey)!.push(record);
     });
-    console.log('📅 캘린더 기록 매핑:', Array.from(map.entries()));
+    
+    // 디버깅: 날짜별 기록 출력
+    const entries = Array.from(map.entries());
+    console.log('📅 캘린더 기록 매핑 (총 ' + entries.length + '일):');
+    entries.forEach(([date, recs]) => {
+      console.log(`  ${date}: ${recs.length}개 기록`, recs[0]);
+    });
+    
     return map;
   }, [records]);
 

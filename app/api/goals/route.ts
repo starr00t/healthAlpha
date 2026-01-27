@@ -16,6 +16,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
+    // Redis 연결 체크
+    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+      console.log('⚠️ Redis not configured, returning empty goals');
+      return NextResponse.json({
+        goals: { goals: [], reminders: [] }
+      });
+    }
+
     const goalsData = await redis.get(`goals:${email}`);
     
     return NextResponse.json({
@@ -23,10 +31,10 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Goals GET error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch goals' },
-      { status: 500 }
-    );
+    // 에러 발생 시 빈 데이터 반환 (서비스 중단 방지)
+    return NextResponse.json({
+      goals: { goals: [], reminders: [] }
+    });
   }
 }
 
