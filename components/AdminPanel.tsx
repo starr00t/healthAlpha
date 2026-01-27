@@ -19,7 +19,7 @@ type TabType = 'users' | 'settings' | 'subscriptions';
 
 export default function AdminPanel() {
   const { user, getAllUsers, deleteUser, updateUserAdmin, grantPremiumAccess, revokePremiumAccess } = useAuthStore();
-  const { settings, updateSettings, hasApiKey } = useAdminStore();
+  const { settings, updateSettings, hasApiKey, setUserEmail, syncFromServer } = useAdminStore();
   const [users, setUsers] = useState<StoredUser[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<TabType>('users');
@@ -46,7 +46,12 @@ export default function AdminPanel() {
   // 초기 로드
   useEffect(() => {
     refreshUsers();
-  }, []);
+    
+    // 관리자 이메일 설정 및 서버에서 설정 다운로드
+    if (user?.email) {
+      setUserEmail(user.email);
+    }
+  }, [user?.email]);
 
   if (!user?.isAdmin) {
     return (
@@ -134,7 +139,7 @@ export default function AdminPanel() {
     }
   };
 
-  const handleSaveSettings = () => {
+  const handleSaveSettings = async () => {
     const settings = {
       openaiApiKey: apiKey.trim(),
       openaiModel: model,
