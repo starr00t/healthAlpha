@@ -29,6 +29,9 @@ export default function HealthCalendar() {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [modalType, setModalType] = useState<ModalType>(null);
   const [modalDate, setModalDate] = useState<Date | null>(null);
+  const [editEventId, setEditEventId] = useState<string | null>(null);
+  const [viewDiaryId, setViewDiaryId] = useState<string | null>(null);
+
   // 사용자 ID 동기화
   useEffect(() => {
     const userId = useHealthStore.getState().userId;
@@ -38,9 +41,6 @@ export default function HealthCalendar() {
       setNoteUserId(userId, userEmail);
     }
   }, [setCalendarUserId, setNoteUserId]);
-      setCalendarUserId(userId, userEmail);
-    }
-  }, [setCalendarUserId]);
 
   // 현재 보기에 따른 날짜들 생성
   const calendarDays = useMemo(() => {
