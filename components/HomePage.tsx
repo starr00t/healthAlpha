@@ -47,11 +47,11 @@ export default function HomePage() {
               if (userHistory.length > 0) {
                 setLastAIAdvice(userHistory[0]);
                 
-                const analysisCategories = ['종합 건강 분석', '체중 분석', '혈압 분석', '혈당 분석'];
-                const analysisAdvices = userHistory.filter((advice: any) => 
-                  analysisCategories.includes(advice.category)
+                // 가장 최근의 종합 건강 분석만 표시
+                const comprehensiveAnalysis = userHistory.find((advice: any) => 
+                  advice.category === '종합 건강 분석'
                 );
-                setHealthAnalysisAdvices(analysisAdvices);
+                setHealthAnalysisAdvices(comprehensiveAnalysis ? [comprehensiveAnalysis] : []);
                 
                 // 서버 데이터를 로컬에도 저장
                 localStorage.setItem('health-alpha-ai-history', JSON.stringify(data.preferences));
@@ -74,11 +74,11 @@ export default function HomePage() {
           if (userHistory.length > 0) {
             setLastAIAdvice(userHistory[0]);
             
-            const analysisCategories = ['종합 건강 분석', '체중 분석', '혈압 분석', '혈당 분석'];
-            const analysisAdvices = userHistory.filter((advice: any) => 
-              analysisCategories.includes(advice.category)
+            // 가장 최근의 종합 건강 분석만 표시
+            const comprehensiveAnalysis = userHistory.find((advice: any) => 
+              advice.category === '종합 건강 분석'
             );
-            setHealthAnalysisAdvices(analysisAdvices);
+            setHealthAnalysisAdvices(comprehensiveAnalysis ? [comprehensiveAnalysis] : []);
           } else {
             setLastAIAdvice(null);
             setHealthAnalysisAdvices([]);
