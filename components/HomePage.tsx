@@ -118,18 +118,23 @@ export default function HomePage() {
     if (todayRecords.length === 0) return null;
     
     // 여러 기록이 있을 수 있으므로 각 항목별로 가장 최근 값 찾기
+    // 시간 순으로 정렬 (최신순)
+    const sortedRecords = [...todayRecords].sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    
     const merged: Partial<HealthRecord> = {
-      id: todayRecords[0].id,
-      date: todayRecords[0].date,
+      id: sortedRecords[0].id,
+      date: sortedRecords[0].date,
     };
     
-    // 각 필드별로 가장 최근에 기록된 값 찾기
-    for (const record of todayRecords.reverse()) {
-      if (!merged.weight && record.weight) merged.weight = record.weight;
-      if (!merged.bloodPressure && record.bloodPressure) merged.bloodPressure = record.bloodPressure;
-      if (!merged.bloodSugar && record.bloodSugar) merged.bloodSugar = record.bloodSugar;
-      if (!merged.steps && record.steps) merged.steps = record.steps;
-      if (!merged.calories && record.calories) merged.calories = record.calories;
+    // 각 필드별로 값이 있는 가장 최근 기록 찾기
+    for (const record of sortedRecords) {
+      if (merged.weight === undefined && record.weight !== undefined) merged.weight = record.weight;
+      if (merged.bloodPressure === undefined && record.bloodPressure !== undefined) merged.bloodPressure = record.bloodPressure;
+      if (merged.bloodSugar === undefined && record.bloodSugar !== undefined) merged.bloodSugar = record.bloodSugar;
+      if (merged.steps === undefined && record.steps !== undefined) merged.steps = record.steps;
+      if (merged.calories === undefined && record.calories !== undefined) merged.calories = record.calories;
     }
     
     return merged as HealthRecord;

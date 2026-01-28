@@ -191,14 +191,25 @@ export const useHealthStore = create<HealthStore>()(
         const existingRecord = records.find(r => r.date.split('T')[0] === dateStr);
         
         if (existingRecord) {
-          // 기존 기록 업데이트
+          // 기존 기록 업데이트 - undefined가 아닌 값만 병합
+          const mergedData: Partial<HealthRecord> = { ...existingRecord };
+          
+          // updatedData의 각 필드를 확인하여 undefined가 아닌 값만 업데이트
+          if (updatedData.weight !== undefined) mergedData.weight = updatedData.weight;
+          if (updatedData.bloodPressure !== undefined) mergedData.bloodPressure = updatedData.bloodPressure;
+          if (updatedData.bloodSugar !== undefined) mergedData.bloodSugar = updatedData.bloodSugar;
+          if (updatedData.steps !== undefined) mergedData.steps = updatedData.steps;
+          if (updatedData.walkingTime !== undefined) mergedData.walkingTime = updatedData.walkingTime;
+          if (updatedData.calories !== undefined) mergedData.calories = updatedData.calories;
+          if (updatedData.notes !== undefined) mergedData.notes = updatedData.notes;
+          
           const updatedRecords = records.map((record) =>
-            record.id === existingRecord.id ? { ...record, ...updatedData } : record
+            record.id === existingRecord.id ? mergedData as HealthRecord : record
           );
           set({ records: updatedRecords });
           saveUserRecords(userId, updatedRecords);
           
-          console.log('✅ 기존 기록 업데이트:', dateStr, updatedData);
+          console.log('✅ 기존 기록 업데이트 (병합):', dateStr, updatedData, '→', mergedData);
         } else {
           // 새 기록 추가 (빈 데이터 검증)
           const hasData = updatedData.weight || updatedData.bloodPressure || updatedData.bloodSugar || 
