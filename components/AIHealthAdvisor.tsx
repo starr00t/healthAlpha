@@ -19,6 +19,12 @@ export default function AIHealthAdvisor() {
   } | null>(null);
   const [customQuestion, setCustomQuestion] = useState('');
   const [customAdvice, setCustomAdvice] = useState<AIAdviceResponse | null>(null);
+  
+  // 히스토리 관련 state
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState<string>('전체');
 
   // localStorage에서 직접 설정 읽기 (hydration 문제 해결)
   const getAdminSettings = () => {
@@ -34,6 +40,43 @@ export default function AIHealthAdvisor() {
       console.error('Failed to load admin settings:', e);
     }
     return adminStore.settings;
+  };
+
+  // 히스토리 로드
+  useEffect(() => {
+    loadHistory();
+  }, [user]);
+
+  const loadHistory = async () => {
+    if (!user) return;
+
+    try {
+      // 서버에서 로드 시도
+      const response = await fetch(`/api/preferences?email=${encodeURIComponent(user.email)}&type=aiHistory`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.preferences && Array.isArray(data.preferences)) {
+          const userHistory = data.preferences.filter((advice: any) => 
+            advice.userId === user.id
+          );
+          setHistory(userHistory);
+          localStorage.setItem('health-alpha-ai-history', JSON.stringify(data.preferences));
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load history from server:', error);
+    }
+
+    // 로컬에서 로드
+    const stored = localStorage.getItem('health-alpha-ai-history');
+    if (stored) {
+      const allHistory = JSON.parse(stored);
+      const userHistory = allHistory.filter((advice: any) => 
+        advice.userId === user.id || !advice.userId
+      );
+      setHistory(userHistory);
+    }
   };
 
   const handleAnalyze = async () => {
@@ -150,7 +193,7 @@ export default function AIHealthAdvisor() {
       if (!user) return;
 
       const stored = localStorage.getItem('health-alpha-ai-history');
-      const history = stored ? JSON.parse(stored) : [];
+      const oldHistory = stored ? JSON.parse(stored) : [];
       
       // userId 추가
       const adviceWithUser = {
@@ -158,10 +201,11 @@ export default function AIHealthAdvisor() {
         userId: user.id,
       };
       
-      // 최신 조언을 맨 앞에 추가 (최대 10개 유지)
-      const newHistory = [adviceWithUser, ...history].slice(0, 10);
+      // 최신 조언을 맨 앞에 추가 (최대 50개 유지)
+      const newHistory = [adviceWithUser, ...oldHistory].slice(0, 50);
       
       localStorage.setItem('health-alpha-ai-history', JSON.stringify(newHistory));
+      setHistory(newHistory.filter((a: any) => a.userId === user.id));
       
       // 서버에 동기화
       if (user.email) {
@@ -179,6 +223,27 @@ export default function AIHealthAdvisor() {
       console.error('Failed to save AI advice history:', error);
     }
   };
+
+  // 히스토리 필터링
+  const filteredHistory = history.filter((item) => {
+    // 카테고리 필터
+    if (filterCategory !== '전체' && item.category !== filterCategory) {
+      return false;
+    }
+    
+    // 검색어 필터
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      return (
+        item.advice?.toLowerCase().includes(query) ||
+        item.question?.toLowerCase().includes(query) ||
+        item.category?.toLowerCase().includes(query) ||
+        item.recommendations?.some((r: string) => r.toLowerCase().includes(query))
+      );
+    }
+    
+    return true;
+  });
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -403,6 +468,111 @@ export default function AIHealthAdvisor() {
           <div className="mt-4">
             <AdviceCard title="AI 답변" advice={customAdvice} icon="🤖" />
           </div>
+        )}
+      </div>
+
+      {/* 히스토리 섹션 */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+            📚 AI 조언 히스토리
+          </h3>
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="text-sm px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            {showHistory ? '숨기기' : `보기 (${history.length})`}
+          </button>
+        </div>
+
+        {showHistory && (
+          <>
+            {/* 검색 및 필터 */}
+            <div className="mb-4 space-y-3">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="검색어 입력 (내용, 질문, 카테고리)"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+              
+              <div className="flex gap-2 flex-wrap">
+                {['전체', '종합 건강 분석', '체중 분석', '혈압 분석', '혈당 분석', 'AI에게 질문하기'].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setFilterCategory(cat)}
+                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                      filterCategory === cat
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 히스토리 목록 */}
+            {filteredHistory.length > 0 ? (
+              <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                {filteredHistory.map((item, index) => {
+                  const date = new Date(item.timestamp);
+                  const daysAgo = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+                  
+                  return (
+                    <div key={index} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between mb-2">
+                        <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs font-medium">
+                          {item.category}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {daysAgo === 0 ? '오늘' : `${daysAgo}일 전`} • {date.toLocaleDateString('ko-KR')}
+                        </span>
+                      </div>
+
+                      {item.question && (
+                        <div className="mb-2 p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            💭 질문: {item.question}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mb-2">
+                        <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                          {item.advice}
+                        </p>
+                      </div>
+
+                      {item.recommendations && item.recommendations.length > 0 && (
+                        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-2">
+                          <p className="text-xs font-semibold text-green-800 dark:text-green-200 mb-1">
+                            📋 권장사항
+                          </p>
+                          <ul className="space-y-0.5">
+                            {item.recommendations.map((rec: string, i: number) => (
+                              <li key={i} className="text-xs text-green-700 dark:text-green-300 flex items-start gap-1">
+                                <span>•</span>
+                                <span>{rec}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                {searchQuery || filterCategory !== '전체' 
+                  ? '검색 결과가 없습니다.' 
+                  : '아직 조언 히스토리가 없습니다.'}
+              </div>
+            )}
+          </>
         )}
       </div>
 
