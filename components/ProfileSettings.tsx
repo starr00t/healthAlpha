@@ -106,7 +106,13 @@ export default function ProfileSettings() {
   };
 
   const age = calculateAge();
-  const currentWeight = 70; // TODO: 최근 체중 데이터에서 가져오기
+  
+  // 최근 체중 데이터 가져오기
+  const records = useHealthStore((state) => state.records);
+  const recentWeightRecord = records
+    .filter((r) => r.weight !== undefined)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+  const currentWeight = recentWeightRecord?.weight || 70;
   const bmi = calculateBMI(currentWeight);
 
   const handleSyncToggle = async () => {

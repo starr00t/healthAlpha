@@ -17,12 +17,34 @@ export default function AuthForm() {
 
   const { login, register } = useAuthStore();
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password: string): { valid: boolean; message?: string } => {
+    if (password.length < 6) {
+      return { valid: false, message: '비밀번호는 6자 이상이어야 합니다.' };
+    }
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      return { valid: false, message: '비밀번호는 영문과 숫자를 포함해야 합니다.' };
+    }
+    return { valid: true };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
+      // 이메일 형식 검증
+      if (!validateEmail(formData.email)) {
+        setError('올바른 이메일 형식이 아닙니다.');
+        setLoading(false);
+        return;
+      }
+
       if (isLogin) {
         const success = await login(formData.email, formData.password);
         if (!success) {
@@ -34,11 +56,15 @@ export default function AuthForm() {
           setLoading(false);
           return;
         }
-        if (formData.password.length < 6) {
-          setError('비밀번호는 6자 이상이어야 합니다.');
+        
+        // 비밀번호 강도 검증
+        const passwordValidation = validatePassword(formData.password);
+        if (!passwordValidation.valid) {
+          setError(passwordValidation.message || '비밀번호가 유효하지 않습니다.');
           setLoading(false);
           return;
         }
+        
         if (!agreedToTerms || !agreedToPrivacy) {
           setError('이용약관 및 개인정보처리방침에 동의해주세요.');
           setLoading(false);

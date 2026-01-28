@@ -2,6 +2,7 @@
 // 클라이언트에서 직접 OpenAI API를 호출하지 않고 이 엔드포인트를 통해 요청
 
 import { NextRequest, NextResponse } from 'next/server';
+import { redis, isRedisConfigured } from '@/lib/redis';
 
 export const runtime = 'edge'; // Edge runtime 사용 (빠른 응답)
 
@@ -205,8 +206,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Rate limiting (선택적 - 남용 방지)
-    // TODO: Redis 등을 사용한 실제 rate limiting 구현 권장
+    // Redis 기반 Rate Limiting (남용 방지)
+    if (isRedisConfigured() && body.userId) {
+      const now = Date.now();
+      const windowMs = 15 * 60 * 1000; // 15분
+      const maxRequests = 10; // 15분당 최대 10회
+      
+      const rateLimitKey = `ratelimit:ai:${body.userId}`;
+      
+      try {
+        // 현재 요청 수 가져오기
+        const requests = await redis.get<number[]>(rateLimitKey) || [];
+        
+        // 시간 윈도우 내의 요청만 필터링
+        const recentRequests = requests.filter((timestamp: number) => now - timestamp < windowMs);
+        
+        if (recentRequests.length >= maxRequests) {
+          return NextResponse.json({
+            error: '너무 많은 요청입니다. 15분 후 다시 시도해주세요.',
+          }, { status: 429 });
+        }
+        
+        // 현재 요청 추가 및 저장
+        recentRequests.push(now);
+        await redis.set(rateLimitKey, recentRequests, { ex: Math.ceil(windowMs / 1000) });
+      } catch (error) {
+        console.error('Rate limit check error:', error);
+        // Redis 에러는 무시하고 계속 진행
+      }
+    }
 
     const prompt = buildHealthPrompt(body);
     

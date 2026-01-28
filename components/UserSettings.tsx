@@ -25,6 +25,16 @@ export default function UserSettings() {
 
   if (!user) return null;
 
+  const validatePassword = (password: string): { valid: boolean; message?: string } => {
+    if (password.length < 6) {
+      return { valid: false, message: '새 비밀번호는 6자 이상이어야 합니다.' };
+    }
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      return { valid: false, message: '새 비밀번호는 영문과 숫자를 포함해야 합니다.' };
+    }
+    return { valid: true };
+  };
+
   const handleUpdateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -41,8 +51,9 @@ export default function UserSettings() {
     }
 
     if (isPasswordChange) {
-      if (accountForm.newPassword.length < 6) {
-        setError('새 비밀번호는 6자 이상이어야 합니다.');
+      const passwordValidation = validatePassword(accountForm.newPassword);
+      if (!passwordValidation.valid) {
+        setError(passwordValidation.message || '비밀번호가 유효하지 않습니다.');
         return;
       }
       if (accountForm.newPassword !== accountForm.confirmPassword) {
