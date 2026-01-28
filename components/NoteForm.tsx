@@ -275,19 +275,21 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
     <div className={`${fullScreenMode ? 'fixed inset-0 z-50' : 'relative'} bg-white dark:bg-gray-800 rounded-lg`}>
       <form onSubmit={handleSubmit} className="h-full flex flex-col">
         {/* 헤더 */}
-        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">
-              {noteId ? '📝 노트 수정' : '📝 새 노트'}
-            </h2>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-4 md:p-6">
+          <div className="flex items-start md:items-center justify-between mb-4 gap-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">
+                {noteId ? '📝 노트 수정' : '📝 새 노트'}
+              </h2>
+              <span className="text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1 block">
                 {wordCount.toLocaleString()}자
               </span>
+            </div>
+            <div className="flex flex-col md:flex-row items-end md:items-center gap-2">
               <button
                 type="button"
                 onClick={() => setEditorMode(editorMode === 'visual' ? 'markdown' : 'visual')}
-                className="px-3 py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 text-xs font-medium"
+                className="px-4 py-2.5 md:py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 text-sm md:text-base font-medium whitespace-nowrap min-h-[44px] md:min-h-0"
                 title={editorMode === 'visual' ? '마크다운 모드로 전환' : '비주얼 모드로 전환'}
               >
                 {editorMode === 'visual' ? '📝 MD' : '✨ 일반'}
@@ -295,7 +297,7 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
               <button
                 type="button"
                 onClick={() => setFullScreenMode(!fullScreenMode)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2.5 md:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-xl md:text-base min-h-[44px] md:min-h-0 min-w-[44px] md:min-w-0"
                 title={fullScreenMode ? '일반 모드' : '전체화면'}
               >
                 {fullScreenMode ? '📉' : '📈'}
@@ -355,40 +357,40 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
             {/* 두 번째 줄: 텍스트 스타일 */}
             <div className="flex flex-wrap gap-1 items-center">
               <div className="flex gap-1">
-                <button type="button" onClick={() => insertText('**', '**')} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 font-bold text-sm" title="굵게">B</button>
-                <button type="button" onClick={() => insertText('*', '*')} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 italic text-sm" title="기울임">I</button>
-                <button type="button" onClick={() => insertText('~~', '~~')} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 line-through text-sm" title="취소선">S</button>
-                <button type="button" onClick={() => insertText('`', '`')} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 font-mono text-sm" title="코드">`</button>
+                <button type="button" onClick={() => insertText('**', '**')} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 font-bold text-sm min-h-[44px] md:min-h-0" title="굵게">B</button>
+                <button type="button" onClick={() => insertText('*', '*')} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 italic text-sm min-h-[44px] md:min-h-0" title="기울임">I</button>
+                <button type="button" onClick={() => insertText('~~', '~~')} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 line-through text-sm min-h-[44px] md:min-h-0" title="취소선">S</button>
+                <button type="button" onClick={() => insertText('`', '`')} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 font-mono text-sm min-h-[44px] md:min-h-0" title="코드">`</button>
               </div>
 
-              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 hidden sm:block"></div>
 
               <div className="flex gap-1">
-                <button type="button" onClick={() => insertHeading(1)} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-bold" title="제목 1">H1</button>
-                <button type="button" onClick={() => insertHeading(2)} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-bold" title="제목 2">H2</button>
-                <button type="button" onClick={() => insertHeading(3)} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-bold" title="제목 3">H3</button>
+                <button type="button" onClick={() => insertHeading(1)} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-bold min-h-[44px] md:min-h-0" title="제목 1">H1</button>
+                <button type="button" onClick={() => insertHeading(2)} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-bold min-h-[44px] md:min-h-0" title="제목 2">H2</button>
+                <button type="button" onClick={() => insertHeading(3)} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-bold min-h-[44px] md:min-h-0" title="제목 3">H3</button>
               </div>
 
-              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 hidden sm:block"></div>
 
               <div className="flex gap-1">
-                <button type="button" onClick={insertBulletList} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm" title="글머리">•</button>
-                <button type="button" onClick={insertNumberedList} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm" title="번호">1.</button>
-                <button type="button" onClick={insertQuote} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm" title="인용">&quot;</button>
-                <button type="button" onClick={insertCodeBlock} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-mono" title="코드 블록">&lt;/&gt;</button>
+                <button type="button" onClick={insertBulletList} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm min-h-[44px] md:min-h-0" title="글머리">•</button>
+                <button type="button" onClick={insertNumberedList} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm min-h-[44px] md:min-h-0" title="번호">1.</button>
+                <button type="button" onClick={insertQuote} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm min-h-[44px] md:min-h-0" title="인용">&quot;</button>
+                <button type="button" onClick={insertCodeBlock} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-mono min-h-[44px] md:min-h-0" title="코드 블록">&lt;/&gt;</button>
               </div>
 
-              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 hidden sm:block"></div>
 
-              <button type="button" onClick={getCurrentDateTime} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm" title="현재 시간">🕐</button>
-              <button type="button" onClick={clearFormatting} className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-900/50 text-sm" title="서식 지우기">🧹</button>
+              <button type="button" onClick={getCurrentDateTime} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm min-h-[44px] md:min-h-0" title="현재 시간">🕐</button>
+              <button type="button" onClick={clearFormatting} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-900/50 text-sm min-h-[44px] md:min-h-0" title="서식 지우기">🧹</button>
             </div>
 
             {/* 이모지 팔레트 */}
             <div className="flex flex-wrap gap-1 items-center pt-2 border-t border-gray-200 dark:border-gray-700">
-              <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">빠른 이모지:</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400 mr-2 hidden sm:inline">빠른 이모지:</span>
               {['💊', '🏥', '🏃', '🍽️', '💪', '😊', '📝', '✅', '⚠️', '💡', '📅', '⏰', '🎯', '🔔', '📌', '✨'].map((emoji) => (
-                <button key={emoji} type="button" onClick={() => insertEmoji(emoji)} className="px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-lg" title={`${emoji} 삽입`}>{emoji}</button>
+                <button key={emoji} type="button" onClick={() => insertEmoji(emoji)} className="px-2 py-2.5 md:py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-base md:text-lg min-h-[44px] md:min-h-0" title={`${emoji} 삽입`}>{emoji}</button>
               ))}
             </div>
           </div>
@@ -440,17 +442,17 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
         </div>
 
         {/* 하단 버튼 */}
-        <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4 flex gap-2">
+        <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4 flex gap-2 md:gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="flex-1 px-4 py-3 md:py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium min-h-[44px] md:min-h-0"
           >
             취소
           </button>
           <button
             type="submit"
-            className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-semibold"
+            className="flex-1 px-4 py-3 md:py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-semibold min-h-[44px] md:min-h-0"
           >
             {noteId ? '✅ 수정 완료' : '✅ 노트 저장'}
           </button>

@@ -386,28 +386,28 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
     return (
       <div className="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex flex-col">
         {/* 전체화면 헤더 */}
-        <div className="border-b border-gray-200 dark:border-gray-700 p-3 md:p-4 bg-white dark:bg-gray-900">
-          <div className="flex justify-between items-center mb-3">
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">
+        <div className="border-b border-gray-200 dark:border-gray-700 p-4 md:p-6 bg-white dark:bg-gray-900">
+          <div className="flex justify-between items-start md:items-center mb-4 gap-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg md:text-2xl font-bold text-gray-800 dark:text-white truncate">
                 {date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })} 다이어리
               </h2>
-              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {wordCount}자 · {Math.ceil(wordCount / 500)} 페이지
+              <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1">
+                {wordCount.toLocaleString()}자 · {Math.ceil(wordCount / 500)} 페이지
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col md:flex-row items-end md:items-center gap-2">
               <button
                 type="button"
                 onClick={() => setEditorMode(editorMode === 'visual' ? 'markdown' : 'visual')}
-                className="px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 text-sm"
+                className="px-4 py-2.5 md:py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 text-sm md:text-base font-medium whitespace-nowrap min-h-[44px] md:min-h-0"
               >
-                {editorMode === 'visual' ? '📝 마크다운 모드' : '✨ 일반 모드'}
+                {editorMode === 'visual' ? '📝 MD' : '✨ 일반'}
               </button>
               <button
                 type="button"
                 onClick={() => setFullScreenMode(false)}
-                className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 text-sm"
+                className="px-4 py-2.5 md:py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 text-sm md:text-base font-medium min-h-[44px] md:min-h-0"
               >
                 ✕ 닫기
               </button>
@@ -815,35 +815,35 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex justify-between items-center">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <label className="block text-sm md:text-base font-medium text-gray-700 dark:text-gray-300">
           오늘의 기분
         </label>
         <button
           type="button"
           onClick={() => setFullScreenMode(true)}
-          className="text-sm px-3 py-1.5 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 shadow-sm font-medium"
+          className="w-full sm:w-auto text-sm md:text-base px-4 py-2.5 md:py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 shadow-sm font-medium min-h-[44px] md:min-h-0"
         >
           🖊️ 전문 에디터로 작성하기
         </button>
       </div>
 
-      <div className="flex gap-2 justify-around">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3">
         {(Object.keys(moodEmojis) as Array<keyof typeof moodEmojis>).map((mood) => (
           <button
             key={mood}
             type="button"
             onClick={() => setFormData({ ...formData, mood })}
-            className={`flex flex-col items-center p-3 rounded-lg border-2 transition-all ${
+            className={`flex flex-col items-center p-2 md:p-3 rounded-lg border-2 transition-all min-h-[80px] md:min-h-[100px] ${
               formData.mood === mood
-                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 scale-110'
+                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 scale-105'
                 : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
             title={moodLabels[mood]}
           >
-            <span className="text-3xl mb-1">{moodEmojis[mood]}</span>
-            <span className="text-xs text-gray-600 dark:text-gray-400">{moodLabels[mood]}</span>
+            <span className="text-2xl md:text-3xl mb-1">{moodEmojis[mood]}</span>
+            <span className="text-xs text-gray-600 dark:text-gray-400 text-center">{moodLabels[mood]}</span>
           </button>
         ))}
       </div>
@@ -894,17 +894,17 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
         </p>
       </div>
 
-      <div className="flex gap-3 pt-4">
+      <div className="flex gap-2 md:gap-3 pt-4">
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white py-3 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+          className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white py-3 md:py-2.5 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium min-h-[44px] md:min-h-0"
         >
           취소
         </button>
         <button
           type="submit"
-          className="flex-1 bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition-colors font-medium"
+          className="flex-1 bg-primary-600 text-white py-3 md:py-2.5 rounded-lg hover:bg-primary-700 transition-colors font-medium min-h-[44px] md:min-h-0"
         >
           {existingDiary ? '수정' : '저장'}
         </button>
