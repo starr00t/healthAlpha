@@ -2,17 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import { useHealthStore } from '@/store/healthStore';
 import { getGoogleAuthUrl } from '@/lib/googleFit';
 
-export default function GoogleFitSync() {
+interface GoogleFitSyncProps {
+  onStepsSynced?: (steps: number) => void;
+}
+
+export default function GoogleFitSync({ onStepsSynced }: GoogleFitSyncProps) {
   const { user } = useAuthStore();
-  const { updateOrAddRecord } = useHealthStore();
   const [isConnected, setIsConnected] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [syncedSteps, setSyncedSteps] = useState<number | null>(null);
-  const [autoSync, setAutoSync] = useState(false);
 
   // URL 파라미터에서 연결 성공 확인
   useEffect(() => {
@@ -59,38 +60,8 @@ export default function GoogleFitSync() {
       
       const lastSyncTime = localStorage.getItem(`google-fit-last-sync:${user.id}`);
       setLastSync(lastSyncTime);
-
-      const autoSyncEnabled = localStorage.getItem(`google-fit-auto-sync:${user.id}`);
-      setAutoSync(autoSyncEnabled === 'true');
     }
   }, [user]);
-
-  // 30초마다 업데이트 확인 (자동 동기화 활성화 시)
-  useEffect(() => {
-    if (!user || !isConnected || !autoSync) return;
-
-    const checkForUpdates = async () => {
-      try {
-        const response = await fetch(`/api/google-fit/sync?userId=${user.id}`);
-        const data = await response.json();
-
-        if (data.hasUpdate) {
-          console.log('Google Fit update detected, syncing...');
-          await syncSteps();
-        }
-      } catch (error) {
-        console.error('Failed to check for updates:', error);
-      }
-    };
-
-    // 즉시 한 번 실행
-    checkForUpdates();
-
-    // 30초마다 확인
-    const interval = setInterval(checkForUpdates, 30 * 1000);
-
-    return () => clearInterval(interval);
-  }, [user, isConnected, autoSync]);
 
   const handleConnect = () => {
     if (!user) return;
@@ -107,11 +78,10 @@ export default function GoogleFitSync() {
     if (confirm('Google Fit 연결을 해제하시겠습니까?')) {
       localStorage.removeItem(`google-fit-connected:${user.id}`);
       localStorage.removeItem(`google-fit-last-sync:${user.id}`);
-      localStorage.removeItem(`google-fit-auto-sync:${user.id}`);
+      localStorage.removeItem(`google-fit-token:${user.id}`);
       setIsConnected(false);
       setLastSync(null);
       setSyncedSteps(null);
-      setAutoSync(false);
     }
   };
 
@@ -147,35 +117,23 @@ export default function GoogleFitSync() {
 
       const data = await response.json();
       
-      // 오늘 날짜의 기록에 걸음수 추가/업데이트 (기존 기록이 있으면 업데이트, 없으면 생성)
-      const today = new Date().toISOString().split('T')[0];
-      
-      updateOrAddRecord(today + 'T00:00:00.000Z', {
-        steps: data.steps,
-        walkingTime: data.walkingTime,
-        calories: data.calories,
-      });
+      // 폼에 걸음수만 채우기 (저장하지 않음)
+      if (onStepsSynced) {
+        onStepsSynced(data.steps);
+      }
 
       setSyncedSteps(data.steps);
       const syncTime = new Date().toISOString();
       setLastSync(syncTime);
       localStorage.setItem(`google-fit-last-sync:${user.id}`, syncTime);
 
-      alert(`✅ 동기화 완료!\n걸음수: ${data.steps.toLocaleString()}걸음`);
+      alert(`✅ 동기화 완료!\n걸음수: ${data.steps.toLocaleString()}걸음\n\n폼에 걸음수가 입력되었습니다.\n다른 데이터(체중, 혈압 등)도 함께 입력하고 '기록 추가' 버튼을 누르세요.`);
     } catch (error) {
       console.error('Sync error:', error);
       alert(`동기화 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}\n\nGoogle Fit 연결을 다시 시도해주세요.`);
     } finally {
       setIsSyncing(false);
     }
-  };
-
-  const toggleAutoSync = () => {
-    if (!user) return;
-    
-    const newValue = !autoSync;
-    setAutoSync(newValue);
-    localStorage.setItem(`google-fit-auto-sync:${user.id}`, String(newValue));
   };
 
   // URL에서 연결 성공 확인
@@ -238,28 +196,6 @@ export default function GoogleFitSync() {
             </div>
           )}
 
-          {/* 자동 동기화 토글 */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div>
-              <p className="font-medium text-gray-800 dark:text-white">자동 동기화</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                30초마다 업데이트 확인
-              </p>
-            </div>
-            <button
-              onClick={toggleAutoSync}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                autoSync ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  autoSync ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-
           {/* 동기화 버튼 */}
           <div className="flex gap-2">
             <button
@@ -279,7 +215,7 @@ export default function GoogleFitSync() {
 
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
             <p className="text-xs text-yellow-800 dark:text-yellow-200">
-              💡 <strong>Tip:</strong> 자동 동기화를 켜두면 Google Fit에서 걸음수가 변경될 때마다 자동으로 업데이트됩니다.
+              💡 <strong>Tip:</strong> 동기화하면 위 폼에 걸음수가 자동으로 입력됩니다. 체중, 혈압 등 다른 데이터도 함께 입력하고 '기록 추가' 버튼을 누르세요.
             </p>
           </div>
         </div>
@@ -287,12 +223,12 @@ export default function GoogleFitSync() {
         <div className="space-y-4">
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-              Google Fit과 연동하면 걸음수를 자동으로 가져올 수 있습니다.
+              Google Fit과 연동하면 걸음수를 폼에 자동으로 입력할 수 있습니다.
             </p>
             <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-              <li>✓ 실시간 걸음수 동기화</li>
+              <li>✓ 버튼 클릭으로 간편하게 걸음수 가져오기</li>
+              <li>✓ 체중, 혈압 등 다른 데이터와 함께 기록</li>
               <li>✓ 자동 칼로리 계산</li>
-              <li>✓ 매일 자동 업데이트</li>
             </ul>
           </div>
 

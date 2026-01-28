@@ -19,6 +19,15 @@ export default function HealthRecordForm() {
     notes: '',
   });
 
+  // Google Fit 동기화 완료 시 걸음수를 폼에 채우기
+  const handleStepsSynced = (steps: number) => {
+    setFormData(prev => ({
+      ...prev,
+      date: new Date().toISOString().split('T')[0], // 오늘 날짜로 설정
+      steps: steps.toString(),
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -203,7 +212,7 @@ export default function HealthRecordForm() {
 
       {/* Google Fit 연동 섹션 */}
       <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-        <GoogleFitSync />
+        <GoogleFitSync onStepsSynced={handleStepsSynced} />
       </div>
     </div>
   );
