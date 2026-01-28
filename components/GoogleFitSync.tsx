@@ -7,7 +7,7 @@ import { getGoogleAuthUrl } from '@/lib/googleFit';
 
 export default function GoogleFitSync() {
   const { user } = useAuthStore();
-  const { addRecord } = useHealthStore();
+  const { updateOrAddRecord } = useHealthStore();
   const [isConnected, setIsConnected] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
@@ -147,11 +147,10 @@ export default function GoogleFitSync() {
 
       const data = await response.json();
       
-      // 오늘 날짜의 기록에 걸음수 추가/업데이트
+      // 오늘 날짜의 기록에 걸음수 추가/업데이트 (기존 기록이 있으면 업데이트, 없으면 생성)
       const today = new Date().toISOString().split('T')[0];
       
-      addRecord({
-        date: today + 'T00:00:00.000Z',
+      updateOrAddRecord(today + 'T00:00:00.000Z', {
         steps: data.steps,
         walkingTime: data.walkingTime,
         calories: data.calories,

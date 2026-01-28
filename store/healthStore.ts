@@ -15,6 +15,7 @@ interface HealthStore {
   syncFromServer: () => Promise<void>;
   addRecord: (record: Omit<HealthRecord, 'id'>) => void;
   updateRecord: (id: string, record: Partial<HealthRecord>) => void;
+  updateOrAddRecord: (date: string, record: Partial<HealthRecord>) => void;
   deleteRecord: (id: string) => void;
   getRecordsByDateRange: (startDate: string, endDate: string) => HealthRecord[];
   exportData: () => string;
@@ -175,6 +176,54 @@ export const useHealthStore = create<HealthStore>()(
         const updatedRecords = get().records.filter((record) => record.id !== id);
         set({ records: updatedRecords });
         saveUserRecords(userId, updatedRecords);
+        
+        // 자동 동기화
+        if (get().syncEnabled) {
+          get().syncToServer();
+        }
+      },
+      
+      updateOrAddRecord: (date, updatedData) => {
+        const { userId, records } = get();
+        
+        // 해당 날짜의 기존 기록 찾기 (날짜만 비교)
+        const dateStr = date.split('T')[0];
+        const existingRecord = records.find(r => r.date.split('T')[0] === dateStr);
+        
+        if (existingRecord) {
+          // 기존 기록 업데이트
+          const updatedRecords = records.map((record) =>
+            record.id === existingRecord.id ? { ...record, ...updatedData } : record
+          );
+          set({ records: updatedRecords });
+          saveUserRecords(userId, updatedRecords);
+          
+          console.log('✅ 기존 기록 업데이트:', dateStr, updatedData);
+        } else {
+          // 새 기록 추가 (빈 데이터 검증)
+          const hasData = updatedData.weight || updatedData.bloodPressure || updatedData.bloodSugar || 
+                         (updatedData.steps && updatedData.steps > 0) || 
+                         (updatedData.calories && updatedData.calories > 0);
+          
+          if (!hasData) {
+            console.warn('⚠️ 빈 건강 기록은 저장되지 않습니다.');
+            return;
+          }
+          
+          const newRecord: HealthRecord = {
+            ...updatedData,
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            date: date,
+          } as HealthRecord;
+          
+          const updatedRecords = [...records, newRecord].sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+          set({ records: updatedRecords });
+          saveUserRecords(userId, updatedRecords);
+          
+          console.log('✅ 새 기록 추가:', dateStr, updatedData);
+        }
         
         // 자동 동기화
         if (get().syncEnabled) {

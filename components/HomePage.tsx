@@ -5,6 +5,7 @@ import { useHealthStore } from '@/store/healthStore';
 import { useGoalsStore } from '@/store/goalsStore';
 import { useCalendarStore } from '@/store/calendarStore';
 import { useHomeLayoutStore } from '@/store/homeLayoutStore';
+import { HealthRecord } from '@/types/health';
 import { useEffect, useMemo, useState } from 'react';
 import HomeLayoutSettings from './HomeLayoutSettings';
 
@@ -104,9 +105,35 @@ export default function HomePage() {
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
 
-  // 오늘의 기록
-  const todayRecords = records.filter(r => r.date.startsWith(todayStr));
-  const latestRecord = todayRecords.length > 0 ? todayRecords[todayRecords.length - 1] : null;
+  // 오늘의 기록 (날짜 부분만 비교)
+  const todayRecords = useMemo(() => {
+    return records.filter(r => {
+      const recordDate = r.date.split('T')[0]; // ISO 형식에서 날짜 부분만 추출
+      return recordDate === todayStr;
+    });
+  }, [records, todayStr]);
+  
+  // 오늘의 가장 최근 기록 (또는 각 항목별 최신 값)
+  const latestRecord = useMemo(() => {
+    if (todayRecords.length === 0) return null;
+    
+    // 여러 기록이 있을 수 있으므로 각 항목별로 가장 최근 값 찾기
+    const merged: Partial<HealthRecord> = {
+      id: todayRecords[0].id,
+      date: todayRecords[0].date,
+    };
+    
+    // 각 필드별로 가장 최근에 기록된 값 찾기
+    for (const record of todayRecords.reverse()) {
+      if (!merged.weight && record.weight) merged.weight = record.weight;
+      if (!merged.bloodPressure && record.bloodPressure) merged.bloodPressure = record.bloodPressure;
+      if (!merged.bloodSugar && record.bloodSugar) merged.bloodSugar = record.bloodSugar;
+      if (!merged.steps && record.steps) merged.steps = record.steps;
+      if (!merged.calories && record.calories) merged.calories = record.calories;
+    }
+    
+    return merged as HealthRecord;
+  }, [todayRecords]);
 
   // 목표별 진행률 계산
   const goalProgress: GoalProgress[] = useMemo(() => {
