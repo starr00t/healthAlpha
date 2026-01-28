@@ -45,6 +45,7 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
     tags: existingDiary?.tags?.join(', ') || '',
     activities: existingDiary?.activities?.join(', ') || '',
     photos: existingDiary?.photos || [] as string[],
+    videos: existingDiary?.videos || [] as string[],
   });
 
   // 글자 수 계산
@@ -62,6 +63,7 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
       tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
       activities: formData.activities ? formData.activities.split(',').map(t => t.trim()).filter(Boolean) : undefined,
       photos: formData.photos.length > 0 ? formData.photos : undefined,
+      videos: formData.videos.length > 0 ? formData.videos : undefined,
       fontSize,
       fontFamily,
     };
@@ -95,6 +97,29 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
     setFormData((prev) => ({
       ...prev,
       photos: prev.photos.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({
+          ...prev,
+          videos: [...prev.videos, reader.result as string],
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeVideo = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      videos: prev.videos.filter((_, i) => i !== index),
     }));
   };
 
@@ -226,15 +251,27 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
       const currentHtml = contentEditableRef.current.innerHTML;
       const expectedHtml = markdownToHtml(formData.content);
       
-      // 포커스가 없고 내용이 비어있거나 다를 때만 업데이트
-      const isEmpty = !currentHtml || currentHtml === '<br>' || currentHtml.trim() === '';
-      const isDifferent = currentHtml !== expectedHtml;
-      
-      if (document.activeElement !== contentEditableRef.current && (isEmpty || isDifferent)) {
+      // 현재 포커스가 없을 때만 업데이트
+      if (document.activeElement !== contentEditableRef.current) {
         contentEditableRef.current.innerHTML = expectedHtml || '';
       }
     }
-  }, [editorMode, formData.content]); // formData.content 다시 추가하되 조건을 개선
+  }, [editorMode]); // editorMode 변경 시에만 실행
+  
+  // formData.content가 변경될 때 비주얼 에디터 업데이트 (초기 로드 포함)
+  useEffect(() => {
+    if (editorMode === 'visual' && contentEditableRef.current && formData.content) {
+      const currentHtml = contentEditableRef.current.innerHTML;
+      const expectedHtml = markdownToHtml(formData.content);
+      
+      // 초기 로드 시에만 업데이트 (비어있을 때)
+      const isEmpty = !currentHtml || currentHtml === '<br>' || currentHtml.trim() === '';
+      
+      if (isEmpty && document.activeElement !== contentEditableRef.current) {
+        contentEditableRef.current.innerHTML = expectedHtml;
+      }
+    }
+  }, [formData.content, editorMode]);
 
   const insertText = (before: string, after: string = '', newLine: boolean = false) => {
     if (editorMode === 'visual') {
@@ -548,13 +585,24 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
                   🧹
                 </button>
 
-                <label className="px-2 md:px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer text-sm">
+                <label className="px-2 md:px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer text-sm" title="사진 추가">
                   📷
                   <input
                     type="file"
                     accept="image/*"
                     multiple
                     onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+
+                <label className="px-2 md:px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 cursor-pointer text-sm" title="동영상 추가">
+                  🎥
+                  <input
+                    type="file"
+                    accept="video/*"
+                    multiple
+                    onChange={handleVideoUpload}
                     className="hidden"
                   />
                 </label>
@@ -662,23 +710,51 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
 
             {/* 사진 미리보기 */}
             {formData.photos.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {formData.photos.map((photo, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={photo}
-                      alt={`사진 ${index + 1}`}
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(index)}
-                      className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">📷 사진</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {formData.photos.map((photo, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={photo}
+                        alt={`사진 ${index + 1}`}
+                        className="w-full h-48 object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(index)}
+                        className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 동영상 미리보기 */}
+            {formData.videos.length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">🎥 동영상</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {formData.videos.map((video, index) => (
+                    <div key={index} className="relative group">
+                      <video
+                        src={video}
+                        controls
+                        className="w-full h-48 object-cover rounded-lg bg-black"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeVideo(index)}
+                        className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

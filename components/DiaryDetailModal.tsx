@@ -177,6 +177,26 @@ export default function DiaryDetailModal({ diary, onClose, onEdit }: DiaryDetail
               </div>
             )}
 
+            {/* 동영상 */}
+            {diary.videos && diary.videos.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                  🎥 동영상 ({diary.videos.length}개)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {diary.videos.map((video, index) => (
+                    <div key={index} className="relative rounded-lg overflow-hidden bg-black">
+                      <video
+                        src={video}
+                        controls
+                        className="w-full h-64 object-contain"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* 활동 */}
             {diary.activities && diary.activities.length > 0 && (
               <div>

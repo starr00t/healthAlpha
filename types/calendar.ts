@@ -25,6 +25,7 @@ export interface DiaryEntry {
   content: string;
   tags?: string[];
   photos?: string[]; // base64 or URLs
+  videos?: string[]; // base64 or URLs
   activities?: string[]; // 운동, 외식 등
   fontSize?: number; // 폰트 크기 (px)
   fontFamily?: string; // 폰트 종류
