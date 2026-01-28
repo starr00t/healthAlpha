@@ -79,7 +79,7 @@ export default function GoogleFitSync({ onStepsSynced }: GoogleFitSyncProps) {
 
     const runAutoSync = async () => {
       try {
-        await syncSteps();
+        await syncSteps(true); // silent 모드로 호출
       } catch (error) {
         console.error('Auto sync failed:', error);
       }
@@ -136,7 +136,7 @@ export default function GoogleFitSync({ onStepsSynced }: GoogleFitSyncProps) {
     localStorage.setItem(`google-fit-sync-interval:${user.id}`, String(newInterval));
   };
 
-  const syncSteps = async () => {
+  const syncSteps = async (silent: boolean = false) => {
     if (!user) return;
 
     setIsSyncing(true);
@@ -178,10 +178,19 @@ export default function GoogleFitSync({ onStepsSynced }: GoogleFitSyncProps) {
       setLastSync(syncTime);
       localStorage.setItem(`google-fit-last-sync:${user.id}`, syncTime);
 
-      alert(`✅ 동기화 완료!\n걸음수: ${data.steps.toLocaleString()}걸음\n\n폼에 걸음수가 입력되었습니다.\n다른 데이터(체중, 혈압 등)도 함께 입력하고 '기록 추가' 버튼을 누르세요.`);
+      // 수동 동기화일 때만 팝업 표시
+      if (!silent) {
+        alert(`✅ 동기화 완료!\n걸음수: ${data.steps.toLocaleString()}걸음\n\n폼에 걸음수가 입력되었습니다.\n다른 데이터(체중, 혈압 등)도 함께 입력하고 '기록 추가' 버튼을 누르세요.`);
+      } else {
+        // 자동 동기화는 콘솔에만 로그
+        console.log(`✅ 자동 동기화 완료: ${data.steps.toLocaleString()}걸음`);
+      }
     } catch (error) {
       console.error('Sync error:', error);
-      alert(`동기화 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}\n\nGoogle Fit 연결을 다시 시도해주세요.`);
+      // 오류는 silent 모드에서도 표시 (중요하므로)
+      if (!silent) {
+        alert(`동기화 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}\n\nGoogle Fit 연결을 다시 시도해주세요.`);
+      }
     } finally {
       setIsSyncing(false);
     }
