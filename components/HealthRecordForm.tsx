@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useHealthStore } from '@/store/healthStore';
 import { calculateWalkingMetrics, getRecentWeight } from '@/utils/walkingCalculator';
 import GoogleFitSync from '@/components/GoogleFitSync';
@@ -18,6 +18,31 @@ export default function HealthRecordForm() {
     steps: '',
     notes: '',
   });
+
+  // 날짜를 자동으로 오늘로 업데이트
+  useEffect(() => {
+    const updateDate = () => {
+      const today = new Date().toISOString().split('T')[0];
+      setFormData(prev => ({
+        ...prev,
+        date: today,
+      }));
+    };
+
+    // 자정마다 날짜 업데이트
+    const now = new Date();
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const timeUntilMidnight = tomorrow.getTime() - now.getTime();
+
+    const timeout = setTimeout(() => {
+      updateDate();
+      // 이후 24시간마다 업데이트
+      const interval = setInterval(updateDate, 24 * 60 * 60 * 1000);
+      return () => clearInterval(interval);
+    }, timeUntilMidnight);
+
+    return () => clearTimeout(timeout);
+  }, []);
 
   // Google Fit 동기화 완료 시 걸음수를 폼에 채우기
   const handleStepsSynced = (steps: number) => {

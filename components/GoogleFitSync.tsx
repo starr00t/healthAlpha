@@ -14,6 +14,8 @@ export default function GoogleFitSync({ onStepsSynced }: GoogleFitSyncProps) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [syncedSteps, setSyncedSteps] = useState<number | null>(null);
+  const [autoSync, setAutoSync] = useState(false);
+  const [syncInterval, setSyncInterval] = useState(30); // 기본 30초
 
   // URL 파라미터에서 연결 성공 확인
   useEffect(() => {
@@ -60,8 +62,37 @@ export default function GoogleFitSync({ onStepsSynced }: GoogleFitSyncProps) {
       
       const lastSyncTime = localStorage.getItem(`google-fit-last-sync:${user.id}`);
       setLastSync(lastSyncTime);
+
+      const autoSyncEnabled = localStorage.getItem(`google-fit-auto-sync:${user.id}`);
+      setAutoSync(autoSyncEnabled === 'true');
+
+      const savedInterval = localStorage.getItem(`google-fit-sync-interval:${user.id}`);
+      if (savedInterval) {
+        setSyncInterval(parseInt(savedInterval));
+      }
     }
   }, [user]);
+
+  // 자동 동기화 기능
+  useEffect(() => {
+    if (!user || !isConnected || !autoSync || syncInterval <= 0) return;
+
+    const runAutoSync = async () => {
+      try {
+        await syncSteps();
+      } catch (error) {
+        console.error('Auto sync failed:', error);
+      }
+    };
+
+    // 즉시 한 번 실행
+    runAutoSync();
+
+    // 설정된 간격으로 반복
+    const interval = setInterval(runAutoSync, syncInterval * 1000);
+
+    return () => clearInterval(interval);
+  }, [user, isConnected, autoSync, syncInterval]);
 
   const handleConnect = () => {
     if (!user) return;
@@ -79,10 +110,30 @@ export default function GoogleFitSync({ onStepsSynced }: GoogleFitSyncProps) {
       localStorage.removeItem(`google-fit-connected:${user.id}`);
       localStorage.removeItem(`google-fit-last-sync:${user.id}`);
       localStorage.removeItem(`google-fit-token:${user.id}`);
+      localStorage.removeItem(`google-fit-auto-sync:${user.id}`);
+      localStorage.removeItem(`google-fit-sync-interval:${user.id}`);
       setIsConnected(false);
       setLastSync(null);
       setSyncedSteps(null);
+      setAutoSync(false);
+      setSyncInterval(30);
     }
+  };
+
+  const toggleAutoSync = () => {
+    if (!user) return;
+    
+    const newValue = !autoSync;
+    setAutoSync(newValue);
+    localStorage.setItem(`google-fit-auto-sync:${user.id}`, String(newValue));
+  };
+
+  const handleIntervalChange = (value: number) => {
+    if (!user) return;
+    
+    const newInterval = Math.max(5, Math.min(3600, value)); // 5초 ~ 1시간
+    setSyncInterval(newInterval);
+    localStorage.setItem(`google-fit-sync-interval:${user.id}`, String(newInterval));
   };
 
   const syncSteps = async () => {
@@ -196,6 +247,80 @@ export default function GoogleFitSync({ onStepsSynced }: GoogleFitSyncProps) {
             </div>
           )}
 
+          {/* 자동 동기화 설정 */}
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-gray-800 dark:text-white">자동 동기화</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  설정한 간격마다 자동으로 동기화
+                </p>
+              </div>
+              <button
+                onClick={toggleAutoSync}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  autoSync ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    autoSync ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {autoSync && (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  동기화 간격 (초)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min="5"
+                    max="3600"
+                    value={syncInterval}
+                    onChange={(e) => handleIntervalChange(parseInt(e.target.value) || 30)}
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  />
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {syncInterval < 60 ? `${syncInterval}초` : `${Math.floor(syncInterval / 60)}분 ${syncInterval % 60}초`}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleIntervalChange(10)}
+                    className="px-3 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
+                  >
+                    10초
+                  </button>
+                  <button
+                    onClick={() => handleIntervalChange(30)}
+                    className="px-3 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
+                  >
+                    30초
+                  </button>
+                  <button
+                    onClick={() => handleIntervalChange(60)}
+                    className="px-3 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
+                  >
+                    1분
+                  </button>
+                  <button
+                    onClick={() => handleIntervalChange(300)}
+                    className="px-3 py-1 text-xs bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
+                  >
+                    5분
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  💡 최소 5초, 최대 3600초(1시간)까지 설정 가능
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* 동기화 버튼 */}
           <div className="flex gap-2">
             <button
@@ -215,7 +340,7 @@ export default function GoogleFitSync({ onStepsSynced }: GoogleFitSyncProps) {
 
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
             <p className="text-xs text-yellow-800 dark:text-yellow-200">
-              💡 <strong>Tip:</strong> 동기화하면 위 폼에 걸음수가 자동으로 입력됩니다. 체중, 혈압 등 다른 데이터도 함께 입력하고 '기록 추가' 버튼을 누르세요.
+              💡 <strong>Tip:</strong> 자동 동기화를 켜면 설정한 간격마다 걸음수가 폼에 자동으로 입력됩니다. 체중, 혈압 등 다른 데이터도 함께 입력하고 '기록 추가' 버튼을 누르세요.
             </p>
           </div>
         </div>
@@ -223,10 +348,11 @@ export default function GoogleFitSync({ onStepsSynced }: GoogleFitSyncProps) {
         <div className="space-y-4">
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-              Google Fit과 연동하면 걸음수를 폼에 자동으로 입력할 수 있습니다.
+              Google Fit과 연동하면 걸음수를 자동으로 가져올 수 있습니다.
             </p>
             <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-              <li>✓ 버튼 클릭으로 간편하게 걸음수 가져오기</li>
+              <li>✓ 자동 동기화로 편리하게 걸음수 입력</li>
+              <li>✓ 초 단위로 동기화 간격 설정 가능</li>
               <li>✓ 체중, 혈압 등 다른 데이터와 함께 기록</li>
               <li>✓ 자동 칼로리 계산</li>
             </ul>
