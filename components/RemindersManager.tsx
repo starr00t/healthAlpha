@@ -2,13 +2,13 @@
 
 import { useAuthStore } from '@/store/authStore';
 import { useGoalsStore } from '@/store/goalsStore';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 export default function RemindersManager() {
   const { user } = useAuthStore();
-  const { reminders, addReminder, updateReminder, deleteReminder, getActiveReminders, syncToServer, syncFromServer } =
+  const { reminders, addReminder, updateReminder, deleteReminder, getActiveReminders } =
     useGoalsStore();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -17,22 +17,8 @@ export default function RemindersManager() {
     days: [] as number[],
   });
   const [permission, setPermission] = useState<NotificationPermission>('default');
-  const hasLoadedRef = useRef(false);
 
-  // 서버에서 데이터 로드 (한 번만)
-  useEffect(() => {
-    if (user?.email && !hasLoadedRef.current) {
-      console.log('🔄 RemindersManager: 서버에서 알림 데이터 로드');
-      syncFromServer();
-      hasLoadedRef.current = true;
-    }
-    
-    // 사용자가 변경되면 다시 로드
-    if (!user?.email) {
-      hasLoadedRef.current = false;
-    }
-  }, [user?.email]);
-
+  // 알림 권한 확인만 수행 (서버 동기화는 store의 setUserId에서 관리)
   useEffect(() => {
     if ('Notification' in window) {
       setPermission(Notification.permission);

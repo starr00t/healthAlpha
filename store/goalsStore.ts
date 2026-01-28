@@ -10,6 +10,7 @@ interface GoalsStore {
   syncEnabled: boolean;
   isSyncing: boolean;
   lastSyncTime: string | null;
+  hasInitialized: boolean;
   
   setUserId: (userId: string, email?: string | null) => void;
   setSyncEnabled: (enabled: boolean) => void;
@@ -36,18 +37,28 @@ export const useGoalsStore = create<GoalsStore>()(
       syncEnabled: true,
       isSyncing: false,
       lastSyncTime: null,
+      hasInitialized: false,
 
       setUserId: async (userId, email = null) => {
-        const currentEmail = get().userEmail;
+        const currentState = get();
+        const currentEmail = currentState.userEmail;
         const newEmail = email || currentEmail;
+        const isSameUser = currentState.userId === userId && currentState.userEmail === newEmail;
         
-        console.log(`🔧 goalsStore.setUserId 호출: userId=${userId}, email=${email}, 기존email=${currentEmail}, 새email=${newEmail}`);
+        console.log(`🔧 goalsStore.setUserId 호출: userId=${userId}, email=${email}, 기존email=${currentEmail}, 새email=${newEmail}, 동일유저=${isSameUser}`);
         
         set({ userId, userEmail: newEmail });
+        
+        // 동일한 사용자이고 이미 초기화되었으면 서버 동기화 건너뛰기 (로컬 데이터 유지)
+        if (isSameUser && currentState.hasInitialized) {
+          console.log('✅ 이미 초기화된 사용자 - 로컬 데이터 유지');
+          return;
+        }
         
         if (userId && newEmail && get().syncEnabled) {
           console.log('🔄 서버에서 목표/알림 데이터를 가져옵니다...');
           await get().syncFromServer();
+          set({ hasInitialized: true });
         } else {
           console.log(`⚠️ 동기화 건너뛰기: userId=${!!userId}, email=${!!newEmail}, syncEnabled=${get().syncEnabled}`);
         }
@@ -61,7 +72,7 @@ export const useGoalsStore = create<GoalsStore>()(
       },
 
       clearData: () => {
-        set({ goals: [], reminders: [] });
+        set({ goals: [], reminders: [], hasInitialized: false });
       },
 
       addGoal: (goal) => {
