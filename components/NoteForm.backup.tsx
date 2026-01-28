@@ -1,0 +1,463 @@
+'use client';
+
+import { useNoteStore } from '@/store/noteStore';
+import { useState, useEffect, useRef } from 'react';
+
+interface NoteFormProps {
+  date: Date;
+  onClose: () => void;
+  onSuccess: () => void;
+  noteId?: string;
+}
+
+const fontFamilies = {
+  default: `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
+  serif: `"Noto Serif KR", Georgia, "Times New Roman", serif`,
+  mono: `"Fira Code", "Consolas", "Monaco", "Courier New", monospace`,
+  cursive: `"Nanum Pen Script", "Caveat", cursive`,
+  gothic: `"Noto Sans KR", "Malgun Gothic", sans-serif`,
+  myeongjo: `"Noto Serif KR", "Batang", serif`,
+};
+
+export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormProps) {
+  const { notes, addNote, updateNote } = useNoteStore();
+  const { userId } = useNoteStore.getState();
+  
+  const existingNote = noteId ? notes.find(n => n.id === noteId) : null;
+  
+  const [fullScreenMode, setFullScreenMode] = useState(false);
+  const [fontSize, setFontSize] = useState(existingNote?.fontSize || 16);
+  const [fontFamily, setFontFamily] = useState(existingNote?.fontFamily || 'default');
+  const [editorMode, setEditorMode] = useState<'visual' | 'markdown'>('visual');
+  const [wordCount, setWordCount] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const contentEditableRef = useRef<HTMLDivElement>(null);
+  
+  const [title, setTitle] = useState(existingNote?.title || '');
+  const [content, setContent] = useState(existingNote?.content || '');
+
+  // 글자 수 계산
+  useEffect(() => {
+    setWordCount(content.length);
+  }, [content]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!userId) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    if (!title.trim() || !content.trim()) {
+      alert('제목과 내용을 모두 입력해주세요.');
+      return;
+    }
+
+    const dateStr = date.toISOString().split('T')[0] + 'T00:00:00.000Z';
+
+    if (noteId) {
+      updateNote(noteId, { 
+        title: title.trim(), 
+        content: content.trim(),
+        fontSize,
+        fontFamily,
+      });
+    } else {
+      addNote({
+        userId,
+        date: dateStr,
+        title: title.trim(),
+        content: content.trim(),
+        fontSize,
+        fontFamily,
+      });
+    }
+
+    onSuccess();
+    onClose();
+  };
+
+  // HTML을 마크다운으로 변환
+  const htmlToMarkdown = (html: string): string => {
+    let markdown = html;
+    
+    // 제목
+    markdown = markdown.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n');
+    markdown = markdown.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n');
+    markdown = markdown.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n');
+    
+    // 굵게
+    markdown = markdown.replace(/<(?:strong|b)[^>]*>(.*?)<\/(?:strong|b)>/gi, '**$1**');
+    
+    // 기울임
+    markdown = markdown.replace(/<(?:em|i)[^>]*>(.*?)<\/(?:em|i)>/gi, '*$1*');
+    
+    // 취소선
+    markdown = markdown.replace(/<(?:del|s|strike)[^>]*>(.*?)<\/(?:del|s|strike)>/gi, '~~$1~~');
+    
+    // 인라인 코드
+    markdown = markdown.replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`');
+    
+    // 인용구
+    markdown = markdown.replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '> $1\n');
+    
+    // 목록
+    markdown = markdown.replace(/<li[^>]*>(.*?)<\/li>/gi, '• $1\n');
+    
+    // 줄바꿈 및 HTML 태그 제거
+    markdown = markdown.replace(/<br\s*\/?>/gi, '\n');
+    markdown = markdown.replace(/<div[^>]*>/gi, '\n');
+    markdown = markdown.replace(/<\/div>/gi, '');
+    markdown = markdown.replace(/<p[^>]*>/gi, '');
+    markdown = markdown.replace(/<\/p>/gi, '\n');
+    markdown = markdown.replace(/<[^>]+>/g, '');
+    
+    // HTML 엔티티 디코딩
+    markdown = markdown.replace(/&nbsp;/g, ' ');
+    markdown = markdown.replace(/&lt;/g, '<');
+    markdown = markdown.replace(/&gt;/g, '>');
+    markdown = markdown.replace(/&amp;/g, '&');
+    
+    return markdown.trim();
+  };
+
+  // 마크다운을 HTML로 변환
+  const markdownToHtml = (markdown: string): string => {
+    let html = markdown;
+    
+    // 제목
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    
+    // 굵게
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    
+    // 기울임
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    
+    // 취소선
+    html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
+    
+    // 인라인 코드
+    html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+    
+    // 인용구
+    html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+    
+    // 글머리 기호
+    html = html.replace(/^• (.+)$/gm, '<li>$1</li>');
+    
+    // 번호 매기기
+    html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+    
+    // 줄바꿈
+    html = html.replace(/\n/g, '<br />');
+    
+    return html;
+  };
+
+  // 비주얼 모드에서 서식 적용
+  const applyFormatVisual = (command: string, value?: string) => {
+    document.execCommand(command, false, value);
+    if (contentEditableRef.current) {
+      const html = contentEditableRef.current.innerHTML;
+      const markdown = htmlToMarkdown(html);
+      setContent(markdown);
+    }
+  };
+
+  // contentEditable 내용이 변경될 때
+  const handleContentEditableInput = (e: React.FormEvent<HTMLDivElement>) => {
+    const html = e.currentTarget.innerHTML;
+    const markdown = htmlToMarkdown(html);
+    
+    if (markdown !== content) {
+      setContent(markdown);
+    }
+  };
+
+  // 비주얼 모드로 전환할 때 마크다운을 HTML로 변환
+  useEffect(() => {
+    if (editorMode === 'visual' && contentEditableRef.current) {
+      const currentHtml = contentEditableRef.current.innerHTML;
+      const expectedHtml = markdownToHtml(content);
+      
+      if (document.activeElement !== contentEditableRef.current) {
+        contentEditableRef.current.innerHTML = expectedHtml || '';
+      }
+    }
+  }, [editorMode]);
+  
+  useEffect(() => {
+    if (editorMode === 'visual' && contentEditableRef.current && content) {
+      const currentHtml = contentEditableRef.current.innerHTML;
+      const expectedHtml = markdownToHtml(content);
+      
+      const isEmpty = !currentHtml || currentHtml === '<br>' || currentHtml.trim() === '';
+      
+      if (isEmpty && document.activeElement !== contentEditableRef.current) {
+        contentEditableRef.current.innerHTML = expectedHtml;
+      }
+    }
+  }, [content, editorMode]);
+
+  const insertText = (before: string, after: string = '', newLine: boolean = false) => {
+    if (editorMode === 'visual') {
+      if (before === '**') applyFormatVisual('bold');
+      else if (before === '*') applyFormatVisual('italic');
+      else if (before === '~~') applyFormatVisual('strikeThrough');
+      else if (before === '# ') applyFormatVisual('formatBlock', 'h1');
+      else if (before === '## ') applyFormatVisual('formatBlock', 'h2');
+      else if (before === '### ') applyFormatVisual('formatBlock', 'h3');
+      else if (before === '• ') applyFormatVisual('insertUnorderedList');
+      else if (before === '1. ') applyFormatVisual('insertOrderedList');
+      else if (before === '> ') {
+        applyFormatVisual('formatBlock', 'blockquote');
+      } else {
+        document.execCommand('insertText', false, before + after);
+        handleContentEditableInput({ currentTarget: contentEditableRef.current } as any);
+      }
+      return;
+    }
+
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = content;
+    const selectedText = text.substring(start, end);
+
+    let newText;
+    if (newLine && start > 0 && text[start - 1] !== '\n') {
+      const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+      newText = text.substring(0, lineStart) + before + text.substring(lineStart);
+    } else {
+      newText = text.substring(0, start) + before + selectedText + after + text.substring(end);
+    }
+    
+    setContent(newText);
+
+    setTimeout(() => {
+      textarea.focus();
+      const newPosition = newLine ? start + before.length : start + before.length;
+      textarea.setSelectionRange(newPosition, newPosition + selectedText.length);
+    }, 0);
+  };
+
+  const insertBulletList = () => insertText('• ', '', true);
+  const insertNumberedList = () => insertText('1. ', '', true);
+  const insertHeading = (level: number) => insertText('#'.repeat(level) + ' ', '', true);
+  const insertQuote = () => insertText('> ', '', true);
+  const insertCodeBlock = () => insertText('```\n', '\n```');
+  const insertEmoji = (emoji: string) => insertText(emoji);
+  const getCurrentDateTime = () => {
+    const now = new Date();
+    const timeStr = now.toLocaleString('ko-KR', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    insertText(`📅 ${timeStr}\n`);
+  };
+  const clearFormatting = () => {
+    if (confirm('모든 서식을 제거하고 일반 텍스트로 변환하시겠습니까?')) {
+      const plainText = content.replace(/[*~`#>]/g, '').replace(/\n{3,}/g, '\n\n');
+      setContent(plainText);
+    }
+  };
+
+  return (
+    <div className={`${fullScreenMode ? 'fixed inset-0 z-50' : 'relative'} bg-white dark:bg-gray-800 rounded-lg`}>
+      <form onSubmit={handleSubmit} className="h-full flex flex-col">
+        {/* 헤더 */}
+        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-4 md:p-6">
+          <div className="flex items-start md:items-center justify-between mb-4 gap-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">
+                {noteId ? '📝 노트 수정' : '📝 새 노트'}
+              </h2>
+              <span className="text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1 block">
+                {wordCount.toLocaleString()}자
+              </span>
+            </div>
+            <div className="flex flex-col md:flex-row items-end md:items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setEditorMode(editorMode === 'visual' ? 'markdown' : 'visual')}
+                className="px-4 py-2.5 md:py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 text-sm md:text-base font-medium whitespace-nowrap min-h-[44px] md:min-h-0"
+                title={editorMode === 'visual' ? '마크다운 모드로 전환' : '비주얼 모드로 전환'}
+              >
+                {editorMode === 'visual' ? '📝 MD' : '✨ 일반'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setFullScreenMode(!fullScreenMode)}
+                className="p-2.5 md:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-xl md:text-base min-h-[44px] md:min-h-0 min-w-[44px] md:min-w-0"
+                title={fullScreenMode ? '일반 모드' : '전체화면'}
+              >
+                {fullScreenMode ? '📉' : '📈'}
+              </button>
+            </div>
+          </div>
+
+          {/* 제목 */}
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full px-4 py-3 text-lg font-semibold border-2 border-amber-300 dark:border-amber-700 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:text-white"
+            placeholder="📌 제목을 입력하세요"
+            required
+          />
+        </div>
+
+        {/* 툴바 */}
+        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-900/50">
+          <div className="space-y-2">
+            {/* 첫 번째 줄: 폰트 설정 */}
+            <div className="flex flex-wrap gap-2 items-center">
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-600 dark:text-gray-400">크기:</label>
+                <select
+                  value={fontSize}
+                  onChange={(e) => setFontSize(Number(e.target.value))}
+                  className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs"
+                >
+                  <option value="12">12px</option>
+                  <option value="14">14px</option>
+                  <option value="16">16px</option>
+                  <option value="18">18px</option>
+                  <option value="20">20px</option>
+                  <option value="22">22px</option>
+                  <option value="24">24px</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-600 dark:text-gray-400">폰트:</label>
+                <select
+                  value={fontFamily}
+                  onChange={(e) => setFontFamily(e.target.value)}
+                  className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs"
+                  style={{ fontFamily: fontFamilies[fontFamily as keyof typeof fontFamilies] }}
+                >
+                  <option value="default">기본</option>
+                  <option value="gothic">고딕</option>
+                  <option value="myeongjo">명조</option>
+                  <option value="mono">고정폭</option>
+                </select>
+              </div>
+            </div>
+
+            {/* 두 번째 줄: 텍스트 스타일 */}
+            <div className="flex flex-wrap gap-1 items-center">
+              <div className="flex gap-1">
+                <button type="button" onClick={() => insertText('**', '**')} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 font-bold text-sm min-h-[44px] md:min-h-0" title="굵게">B</button>
+                <button type="button" onClick={() => insertText('*', '*')} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 italic text-sm min-h-[44px] md:min-h-0" title="기울임">I</button>
+                <button type="button" onClick={() => insertText('~~', '~~')} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 line-through text-sm min-h-[44px] md:min-h-0" title="취소선">S</button>
+                <button type="button" onClick={() => insertText('`', '`')} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 font-mono text-sm min-h-[44px] md:min-h-0" title="코드">`</button>
+              </div>
+
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 hidden sm:block"></div>
+
+              <div className="flex gap-1">
+                <button type="button" onClick={() => insertHeading(1)} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-bold min-h-[44px] md:min-h-0" title="제목 1">H1</button>
+                <button type="button" onClick={() => insertHeading(2)} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-bold min-h-[44px] md:min-h-0" title="제목 2">H2</button>
+                <button type="button" onClick={() => insertHeading(3)} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-bold min-h-[44px] md:min-h-0" title="제목 3">H3</button>
+              </div>
+
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 hidden sm:block"></div>
+
+              <div className="flex gap-1">
+                <button type="button" onClick={insertBulletList} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm min-h-[44px] md:min-h-0" title="글머리">•</button>
+                <button type="button" onClick={insertNumberedList} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm min-h-[44px] md:min-h-0" title="번호">1.</button>
+                <button type="button" onClick={insertQuote} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm min-h-[44px] md:min-h-0" title="인용">&quot;</button>
+                <button type="button" onClick={insertCodeBlock} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-mono min-h-[44px] md:min-h-0" title="코드 블록">&lt;/&gt;</button>
+              </div>
+
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 hidden sm:block"></div>
+
+              <button type="button" onClick={getCurrentDateTime} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm min-h-[44px] md:min-h-0" title="현재 시간">🕐</button>
+              <button type="button" onClick={clearFormatting} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-900/50 text-sm min-h-[44px] md:min-h-0" title="서식 지우기">🧹</button>
+            </div>
+
+            {/* 이모지 팔레트 */}
+            <div className="flex flex-wrap gap-1 items-center pt-2 border-t border-gray-200 dark:border-gray-700">
+              <span className="text-xs text-gray-500 dark:text-gray-400 mr-2 hidden sm:inline">빠른 이모지:</span>
+              {['💊', '🏥', '🏃', '🍽️', '💪', '😊', '📝', '✅', '⚠️', '💡', '📅', '⏰', '🎯', '🔔', '📌', '✨'].map((emoji) => (
+                <button key={emoji} type="button" onClick={() => insertEmoji(emoji)} className="px-2 py-2.5 md:py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-base md:text-lg min-h-[44px] md:min-h-0" title={`${emoji} 삽입`}>{emoji}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 본문 영역 */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {editorMode === 'visual' ? (
+            <div className="relative">
+              {!content && (
+                <div className="absolute top-4 left-6 text-gray-400 dark:text-gray-500 pointer-events-none" style={{ fontSize: `${fontSize}px` }}>
+                  내용을 입력하세요...<br />
+                  <span className="text-sm">💡 상단 버튼으로 서식을 적용할 수 있어요</span>
+                </div>
+              )}
+              <div
+                ref={contentEditableRef}
+                contentEditable
+                onInput={handleContentEditableInput}
+                className="w-full min-h-[40vh] p-6 border-2 border-amber-300 dark:border-amber-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white overflow-auto"
+                style={{
+                  fontSize: `${fontSize}px`,
+                  fontFamily: fontFamilies[fontFamily as keyof typeof fontFamilies],
+                  lineHeight: '1.8',
+                }}
+                suppressContentEditableWarning
+              />
+            </div>
+          ) : (
+            <textarea
+              ref={textareaRef}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full min-h-[40vh] p-6 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none font-mono"
+              placeholder="내용을 입력하세요...
+
+💡 마크다운 문법:
+**굵게**, *기울임*, ~~취소선~~
+# 제목1, ## 제목2, ### 제목3
+• 글머리 기호
+> 인용구
+`코드`"
+              style={{
+                fontSize: `${fontSize}px`,
+                lineHeight: '1.8',
+              }}
+            />
+          )}
+        </div>
+
+        {/* 하단 버튼 */}
+        <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4 flex gap-2 md:gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-3 md:py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium min-h-[44px] md:min-h-0"
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            className="flex-1 px-4 py-3 md:py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-semibold min-h-[44px] md:min-h-0"
+          >
+            {noteId ? '✅ 수정 완료' : '✅ 노트 저장'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}

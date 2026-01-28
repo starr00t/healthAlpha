@@ -273,6 +273,11 @@ export default function Home() {
               title="혈당 변화"
               color="#8b5cf6"
             />
+            <TrendChart
+              metric="steps"
+              title="걸음수 변화"
+              color="#10b981"
+            />
           </div>
         )}
 

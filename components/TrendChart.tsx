@@ -6,7 +6,7 @@ import { useHealthStore } from '@/store/healthStore';
 import { prepareChartData, calculateStats } from '@/utils/healthUtils';
 
 interface TrendChartProps {
-  metric: 'weight' | 'bloodPressure' | 'bloodSugar';
+  metric: 'weight' | 'bloodPressure' | 'bloodSugar' | 'steps';
   title: string;
   color: string;
 }
@@ -23,6 +23,8 @@ export default function TrendChart({ metric, title, color }: TrendChartProps) {
         return 'mmHg';
       case 'bloodSugar':
         return 'mg/dL';
+      case 'steps':
+        return '걸음';
       default:
         return '';
     }
@@ -74,6 +76,10 @@ export default function TrendChart({ metric, title, color }: TrendChartProps) {
   const getTrendColor = () => {
     if (metric === 'weight') {
       return stats.trend === 'down' ? 'text-green-600' : stats.trend === 'up' ? 'text-red-600' : 'text-gray-600';
+    }
+    // 걸음수는 증가가 좋음
+    if (metric === 'steps') {
+      return stats.trend === 'up' ? 'text-green-600' : stats.trend === 'down' ? 'text-red-600' : 'text-gray-600';
     }
     return stats.trend === 'up' ? 'text-red-600' : stats.trend === 'down' ? 'text-green-600' : 'text-gray-600';
   };

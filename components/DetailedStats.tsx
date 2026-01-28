@@ -49,6 +49,13 @@ export default function DetailedStats() {
     return values.length > 0 ? calculateStats(values) : null;
   }, [filteredRecords]);
 
+  const stepsStats = useMemo(() => {
+    const values = filteredRecords
+      .filter((r) => r.steps !== undefined && r.steps > 0)
+      .map((r) => r.steps!);
+    return values.length > 0 ? calculateStats(values) : null;
+  }, [filteredRecords]);
+
   const getTrendBadge = (trend: 'up' | 'down' | 'stable') => {
     const badges = {
       up: { icon: '📈', text: '상승', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
@@ -147,6 +154,7 @@ export default function DetailedStats() {
         <StatCard title="이완기 혈압" stats={diastolicStats} unit="mmHg" icon="💗" />
         <StatCard title="심박수" stats={heartRateStats} unit="bpm" icon="💓" />
         <StatCard title="혈당" stats={bloodSugarStats} unit="mg/dL" icon="🩸" />
+        <StatCard title="걸음수" stats={stepsStats} unit="걸음" icon="🚶" />
       </div>
 
       {filteredRecords.length === 0 && (

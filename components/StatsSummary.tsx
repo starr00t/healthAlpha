@@ -12,8 +12,9 @@ export default function StatsSummary() {
     const withWeight = records.filter((r) => r.weight !== undefined).length;
     const withBP = records.filter((r) => r.bloodPressure !== undefined).length;
     const withBS = records.filter((r) => r.bloodSugar !== undefined).length;
+    const withSteps = records.filter((r) => r.steps !== undefined && r.steps > 0).length;
 
-    return { withWeight, withBP, withBS };
+    return { withWeight, withBP, withBS, withSteps };
   };
 
   const counts = getRecordCountByType();
@@ -22,7 +23,7 @@ export default function StatsSummary() {
     <div className="bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg shadow-md p-6 text-white">
       <h2 className="text-2xl font-bold mb-6">건강 관리 현황</h2>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
           <div className="text-sm opacity-90">전체 기록</div>
           <div className="text-3xl font-bold mt-1">{totalRecords}</div>
@@ -42,6 +43,11 @@ export default function StatsSummary() {
           <div className="text-sm opacity-90">혈당 기록</div>
           <div className="text-3xl font-bold mt-1">{counts.withBS}</div>
         </div>
+        
+        <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+          <div className="text-sm opacity-90">걸음수 기록</div>
+          <div className="text-3xl font-bold mt-1">{counts.withSteps}</div>
+        </div>
       </div>
 
       {latestRecord && (
@@ -54,7 +60,7 @@ export default function StatsSummary() {
               day: 'numeric',
             })}
           </div>
-          <div className="flex gap-4 mt-2 text-sm">
+          <div className="flex flex-wrap gap-4 mt-2 text-sm">
             {latestRecord.weight && <span>체중: {latestRecord.weight}kg</span>}
             {latestRecord.bloodPressure && (
               <span>
@@ -63,6 +69,7 @@ export default function StatsSummary() {
               </span>
             )}
             {latestRecord.bloodSugar && <span>혈당: {latestRecord.bloodSugar}mg/dL</span>}
+            {latestRecord.steps && <span>🚶 걸음수: {latestRecord.steps.toLocaleString()}걸음</span>}
           </div>
         </div>
       )}

@@ -27,13 +27,14 @@ export const calculateStats = (values: number[]): HealthStats => {
 
 export const prepareChartData = (
   records: HealthRecord[],
-  metric: 'weight' | 'bloodPressure' | 'bloodSugar'
+  metric: 'weight' | 'bloodPressure' | 'bloodSugar' | 'steps'
 ): ChartDataPoint[] => {
   return records
     .filter((record) => {
       if (metric === 'weight') return record.weight !== undefined;
       if (metric === 'bloodPressure') return record.bloodPressure !== undefined;
       if (metric === 'bloodSugar') return record.bloodSugar !== undefined;
+      if (metric === 'steps') return record.steps !== undefined && record.steps > 0;
       return false;
     })
     .map((record) => {
@@ -53,6 +54,8 @@ export const prepareChartData = (
         baseData.diastolic = record.bloodPressure.diastolic;
       } else if (metric === 'bloodSugar' && record.bloodSugar) {
         baseData.value = record.bloodSugar;
+      } else if (metric === 'steps' && record.steps) {
+        baseData.value = record.steps;
       }
 
       return baseData;
