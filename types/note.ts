@@ -8,6 +8,8 @@ export interface Note {
   content: string;
   fontSize?: number; // 폰트 크기 (px)
   fontFamily?: string; // 폰트 종류
+  photos?: string[]; // Base64 인코딩된 이미지들
+  videos?: string[]; // Base64 인코딩된 동영상들
   createdAt: string;
   updatedAt: string;
 }

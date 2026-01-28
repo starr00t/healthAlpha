@@ -30,11 +30,14 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
   const [fontFamily, setFontFamily] = useState(existingNote?.fontFamily || 'default');
   const [editorMode, setEditorMode] = useState<'visual' | 'markdown'>('visual');
   const [wordCount, setWordCount] = useState(0);
+  const [toolbarExpanded, setToolbarExpanded] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const contentEditableRef = useRef<HTMLDivElement>(null);
   
   const [title, setTitle] = useState(existingNote?.title || '');
   const [content, setContent] = useState(existingNote?.content || '');
+  const [photos, setPhotos] = useState<string[]>(existingNote?.photos || []);
+  const [videos, setVideos] = useState<string[]>(existingNote?.videos || []);
 
   // 글자 수 계산
   useEffect(() => {
@@ -62,6 +65,8 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
         content: content.trim(),
         fontSize,
         fontFamily,
+        photos: photos.length > 0 ? photos : undefined,
+        videos: videos.length > 0 ? videos : undefined,
       });
     } else {
       addNote({
@@ -71,11 +76,47 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
         content: content.trim(),
         fontSize,
         fontFamily,
+        photos: photos.length > 0 ? photos : undefined,
+        videos: videos.length > 0 ? videos : undefined,
       });
     }
 
     onSuccess();
     onClose();
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotos((prev) => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setVideos((prev) => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeVideo = (index: number) => {
+    setVideos((prev) => prev.filter((_, i) => i !== index));
   };
 
   // HTML을 마크다운으로 변환
@@ -304,47 +345,38 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
               </button>
             </div>
           </div>
-
-          {/* 제목 */}
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-4 py-3 text-lg font-semibold border-2 border-amber-300 dark:border-amber-700 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:text-white"
-            placeholder="📌 제목을 입력하세요"
-            required
-          />
         </div>
 
         {/* 툴바 */}
-        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-900/50">
-          <div className="space-y-2">
-            {/* 첫 번째 줄: 폰트 설정 */}
-            <div className="flex flex-wrap gap-2 items-center">
+        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+          <div className="p-3">
+            <div className="flex items-center justify-between mb-2">
+              <button
+                type="button"
+                onClick={() => setToolbarExpanded(!toolbarExpanded)}
+                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium"
+              >
+                <span>{toolbarExpanded ? '▼' : '▶'}</span>
+                <span>편집 도구</span>
+              </button>
               <div className="flex items-center gap-2">
-                <label className="text-xs text-gray-600 dark:text-gray-400">크기:</label>
+                <label className="text-xs text-gray-600 dark:text-gray-400 hidden sm:inline">크기:</label>
                 <select
                   value={fontSize}
                   onChange={(e) => setFontSize(Number(e.target.value))}
                   className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs"
                 >
-                  <option value="12">12px</option>
-                  <option value="14">14px</option>
-                  <option value="16">16px</option>
-                  <option value="18">18px</option>
-                  <option value="20">20px</option>
-                  <option value="22">22px</option>
-                  <option value="24">24px</option>
+                  <option value={12}>12</option>
+                  <option value={14}>14</option>
+                  <option value={16}>16</option>
+                  <option value={18}>18</option>
+                  <option value={20}>20</option>
+                  <option value={24}>24</option>
                 </select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-gray-600 dark:text-gray-400">폰트:</label>
                 <select
                   value={fontFamily}
                   onChange={(e) => setFontFamily(e.target.value)}
                   className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs"
-                  style={{ fontFamily: fontFamilies[fontFamily as keyof typeof fontFamilies] }}
                 >
                   <option value="default">기본</option>
                   <option value="gothic">고딕</option>
@@ -354,8 +386,10 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
               </div>
             </div>
 
-            {/* 두 번째 줄: 텍스트 스타일 */}
-            <div className="flex flex-wrap gap-1 items-center">
+            {toolbarExpanded && (
+              <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                {/* 텍스트 스타일 */}
+                <div className="flex flex-wrap gap-1 items-center">
               <div className="flex gap-1">
                 <button type="button" onClick={() => insertText('**', '**')} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 font-bold text-sm min-h-[44px] md:min-h-0" title="굵게">B</button>
                 <button type="button" onClick={() => insertText('*', '*')} className="px-2.5 md:px-3 py-2.5 md:py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 italic text-sm min-h-[44px] md:min-h-0" title="기울임">I</button>
@@ -393,17 +427,36 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
                 <button key={emoji} type="button" onClick={() => insertEmoji(emoji)} className="px-2 py-2.5 md:py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-base md:text-lg min-h-[44px] md:min-h-0" title={`${emoji} 삽입`}>{emoji}</button>
               ))}
             </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* 본문 영역 */}
         <div className="flex-1 overflow-y-auto p-4">
-          {editorMode === 'visual' ? (
+          {/* 제목 */}
+          <div className="mb-4">
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-4 py-3 text-lg font-semibold border-2 border-amber-300 dark:border-amber-700 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:text-white"
+              placeholder="📌 제목을 입력하세요"
+              required
+            />
+          </div>
+
+          {/* 에디터 영역 */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              내용 *
+            </label>
+            {editorMode === 'visual' ? (
             <div className="relative">
               {!content && (
                 <div className="absolute top-4 left-6 text-gray-400 dark:text-gray-500 pointer-events-none" style={{ fontSize: `${fontSize}px` }}>
                   내용을 입력하세요...<br />
-                  <span className="text-sm">💡 상단 버튼으로 서식을 적용할 수 있어요</span>
+                  <span className="text-sm">💡 상단 도구로 서식을 적용할 수 있어요</span>
                 </div>
               )}
               <div
@@ -437,8 +490,76 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
                 fontSize: `${fontSize}px`,
                 lineHeight: '1.8',
               }}
+              required
             />
           )}
+          </div>
+
+          {/* 이미지/동영상 업로드 */}
+          <div className="mb-4 space-y-3">
+            <div className="flex gap-2">
+              <label className="flex-1 cursor-pointer">
+                <div className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
+                  <span>📷 이미지 추가</span>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+              <label className="flex-1 cursor-pointer">
+                <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors">
+                  <span>🎥 동영상 추가</span>
+                </div>
+                <input
+                  type="file"
+                  accept="video/*"
+                  multiple
+                  onChange={handleVideoUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {/* 이미지 미리보기 */}
+            {photos.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {photos.map((photo, index) => (
+                  <div key={index} className="relative group">
+                    <img src={photo} alt={`업로드 ${index + 1}`} className="w-full h-32 object-cover rounded-lg" />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(index)}
+                      className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 동영상 미리보기 */}
+            {videos.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {videos.map((video, index) => (
+                  <div key={index} className="relative group">
+                    <video src={video} controls className="w-full h-48 object-cover rounded-lg" />
+                    <button
+                      type="button"
+                      onClick={() => removeVideo(index)}
+                      className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 하단 버튼 */}
