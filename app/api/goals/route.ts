@@ -25,7 +25,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Goals GET error:', error);
-    // 에러 발생 시 빈 데이터 반환 (서비스 중단 방지)
     return NextResponse.json({
       goals: { goals: [], reminders: [] }
     });
@@ -41,8 +40,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    const redis = getRedisClient();
-    if (!isRedisConfigured()log('⚠️ Redis not configured, skipping save');
+    if (!isRedisConfigured()) {
+      console.log('⚠️ Redis not configured, skipping save');
       return NextResponse.json({ success: true, warning: 'Redis not configured' });
     }
 
@@ -61,16 +60,15 @@ export async function POST(request: NextRequest) {
 // DELETE - 목표 및 알림 삭제
 export async function DELETE(request: NextRequest) {
   try {
-    const redis = getRedisClient();
-    if (!redis) {
-      console.log('⚠️ Redis not configured, skipping delete');
-      return NextResponse.json({ success: true, warning: 'Redis not configured' });
-    }
-
     const email = request.headers.get('x-user-email');
     
     if (!email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!isRedisConfigured()) {
+      console.log('⚠️ Redis not configured, skipping delete');
+      return NextResponse.json({ success: true, warning: 'Redis not configured' });
     }
 
     await redis.del(`goals:${email}`);
