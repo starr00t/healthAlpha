@@ -1,16 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Redis } from '@upstash/redis';
-
-// Redis 연결 확인 함수
-function getRedisClient(): Redis | null {
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-    return null;
-  }
-  return new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
-  });
-}
+import { redis, isRedisConfigured } from '@/lib/redis';
 
 // GET - 목표 및 알림 조회
 export async function GET(request: NextRequest) {
@@ -22,8 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    const redis = getRedisClient();
-    if (!redis) {
+    if (!isRedisConfigured()) {
       console.log('⚠️ Redis not configured, returning empty goals');
       return NextResponse.json({
         goals: { goals: [], reminders: [] }
@@ -54,8 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     const redis = getRedisClient();
-    if (!redis) {
-      console.log('⚠️ Redis not configured, skipping save');
+    if (!isRedisConfigured()log('⚠️ Redis not configured, skipping save');
       return NextResponse.json({ success: true, warning: 'Redis not configured' });
     }
 
