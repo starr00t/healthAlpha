@@ -38,10 +38,18 @@ export const useGoalsStore = create<GoalsStore>()(
       lastSyncTime: null,
 
       setUserId: async (userId, email = null) => {
-        set({ userId, userEmail: email });
+        const currentEmail = get().userEmail;
+        const newEmail = email || currentEmail;
         
-        if (userId && email && get().syncEnabled) {
+        console.log(`🔧 goalsStore.setUserId 호출: userId=${userId}, email=${email}, 기존email=${currentEmail}, 새email=${newEmail}`);
+        
+        set({ userId, userEmail: newEmail });
+        
+        if (userId && newEmail && get().syncEnabled) {
+          console.log('🔄 서버에서 목표/알림 데이터를 가져옵니다...');
           await get().syncFromServer();
+        } else {
+          console.log(`⚠️ 동기화 건너뛰기: userId=${!!userId}, email=${!!newEmail}, syncEnabled=${get().syncEnabled}`);
         }
       },
 
@@ -120,10 +128,25 @@ export const useGoalsStore = create<GoalsStore>()(
 
       syncToServer: async () => {
         const { userEmail, goals, reminders, syncEnabled, isSyncing } = get();
-        if (!syncEnabled || !userEmail || isSyncing) return;
+        
+        if (!syncEnabled) {
+          console.log('⚠️ 동기화가 비활성화되어 있습니다.');
+          return;
+        }
+        
+        if (!userEmail) {
+          console.log('⚠️ 사용자 이메일이 없어 동기화를 건너뜁니다.');
+          return;
+        }
+        
+        if (isSyncing) {
+          console.log('⚠️ 이미 동기화 중입니다.');
+          return;
+        }
 
         set({ isSyncing: true });
         try {
+          console.log(`📤 서버에 동기화 중... (${userEmail})`);
           const response = await fetch('/api/goals', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -132,7 +155,9 @@ export const useGoalsStore = create<GoalsStore>()(
 
           if (response.ok) {
             set({ lastSyncTime: new Date().toISOString() });
-            console.log('✅ 목표/알림 동기화 완료');
+            console.log(`✅ 목표/알림 동기화 완료 (목표: ${goals.length}, 알림: ${reminders.length})`);
+          } else {
+            console.error('❌ 서버 응답 실패:', response.status);
           }
         } catch (error) {
           console.error('❌ 목표/알림 동기화 실패:', error);
@@ -143,20 +168,35 @@ export const useGoalsStore = create<GoalsStore>()(
 
       syncFromServer: async () => {
         const { userEmail, syncEnabled } = get();
-        if (!syncEnabled || !userEmail) return;
+        
+        if (!syncEnabled) {
+          console.log('⚠️ 동기화가 비활성화되어 있습니다.');
+          return;
+        }
+        
+        if (!userEmail) {
+          console.log('⚠️ 사용자 이메일이 없어 서버에서 가져올 수 없습니다.');
+          return;
+        }
 
         try {
+          console.log(`📥 서버에서 다운로드 중... (${userEmail})`);
           const response = await fetch(`/api/goals?email=${encodeURIComponent(userEmail)}`);
 
           if (response.ok) {
             const data = await response.json();
             if (data.goals) {
+              const fetchedGoals = data.goals.goals || [];
+              const fetchedReminders = data.goals.reminders || [];
+              
               set({
-                goals: data.goals.goals || [],
-                reminders: data.goals.reminders || [],
+                goals: fetchedGoals,
+                reminders: fetchedReminders,
               });
-              console.log('✅ 목표/알림 다운로드 완료');
+              console.log(`✅ 목표/알림 다운로드 완료 (목표: ${fetchedGoals.length}, 알림: ${fetchedReminders.length})`);
             }
+          } else {
+            console.error('❌ 서버 응답 실패:', response.status);
           }
         } catch (error) {
           console.error('❌ 목표/알림 다운로드 실패:', error);
