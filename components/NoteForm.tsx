@@ -82,7 +82,6 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
     }
 
     onSuccess();
-    onClose();
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
