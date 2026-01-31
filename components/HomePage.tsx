@@ -14,8 +14,8 @@ interface GoalProgress {
   type: string;
   icon: string;
   label: string;
-  current: number;
-  target: number;
+  current: number | string; // 혈압은 "120/80" 형태로 표시
+  target: number | string;  // 혈압은 "120/80" 형태로 표시
   progress: number;
   unit: string;
   deadline: string;
@@ -144,6 +144,8 @@ export default function HomePage() {
   const goalProgress: GoalProgress[] = useMemo(() => {
     return userGoals.map(goal => {
       let current = 0;
+      let currentDisplay: string | number = 0;
+      let targetDisplay: string | number = 0;
       let unit = '';
       let label = '';
       let icon = '';
@@ -151,37 +153,55 @@ export default function HomePage() {
       switch (goal.type) {
         case 'weight':
           current = latestRecord?.weight || 0;
+          currentDisplay = current;
+          targetDisplay = goal.targetValue;
           unit = 'kg';
           label = '체중';
           icon = '⚖️';
           break;
         case 'bloodPressure':
+          // 혈압은 수축기 혈압을 기준으로 진행률 계산
           current = latestRecord?.bloodPressure?.systolic || 0;
+          const currentDiastolic = latestRecord?.bloodPressure?.diastolic || 0;
+          // 표시는 "수축기/이완기" 형태로
+          currentDisplay = current && currentDiastolic ? `${current}/${currentDiastolic}` : current || '-';
+          targetDisplay = goal.targetSystolic && goal.targetDiastolic 
+            ? `${goal.targetSystolic}/${goal.targetDiastolic}` 
+            : goal.targetValue;
           unit = 'mmHg';
           label = '혈압';
           icon = '❤️';
           break;
         case 'bloodSugar':
           current = latestRecord?.bloodSugar || 0;
+          currentDisplay = current;
+          targetDisplay = goal.targetValue;
           unit = 'mg/dL';
           label = '혈당';
           icon = '🩸';
           break;
         case 'steps':
           current = latestRecord?.steps || 0;
+          currentDisplay = current;
+          targetDisplay = goal.targetValue;
           unit = '걸음';
           label = '걸음수';
           icon = '🚶';
           break;
         case 'calories':
           current = latestRecord?.calories || 0;
+          currentDisplay = current;
+          targetDisplay = goal.targetValue;
           unit = 'kcal';
           label = '칼로리';
           icon = '🔥';
           break;
       }
 
-      const target = goal.targetValue;
+      // 혈압의 경우 targetSystolic 기준으로 진행률 계산
+      const target = goal.type === 'bloodPressure' && goal.targetSystolic 
+        ? goal.targetSystolic 
+        : goal.targetValue;
       const progress = target > 0 ? Math.min((current / target) * 100, 100) : 0;
       const daysLeft = Math.ceil((new Date(goal.deadline).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -190,8 +210,8 @@ export default function HomePage() {
         type: goal.type,
         icon,
         label,
-        current,
-        target,
+        current: currentDisplay,
+        target: targetDisplay,
         progress,
         unit,
         deadline: goal.deadline,
