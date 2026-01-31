@@ -20,8 +20,7 @@ export default function HealthCalendar() {
   const events = useCalendarStore((state) => state.events);
   const diaries = useCalendarStore((state) => state.diaries);
   const setCalendarUserId = useCalendarStore((state) => state.setUserId);
-  const notes = useNoteStore((state) => state.notes);
-  const getNotesByDate = useNoteStore((state) => state.getNotesByDate);
+  const notes = useNoteStore((state) => state.notes); // notes 상태를 직접 구독
   const setNoteUserId = useNoteStore((state) => state.setUserId);
   
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -678,7 +677,8 @@ export default function HealthCalendar() {
 
           {/* 노트 목록 */}
           {(() => {
-            const dateNotes = getNotesByDate(selectedDate.toISOString());
+            const dateStr = selectedDate.toISOString().split('T')[0];
+            const dateNotes = notes.filter((note) => note.date.startsWith(dateStr));
             return dateNotes.length > 0 && (
               <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                 <div className="flex items-center justify-between mb-3">

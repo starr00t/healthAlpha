@@ -59,7 +59,8 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
 
     const dateStr = date.toISOString().split('T')[0] + 'T00:00:00.000Z';
 
-    if (noteId) {
+    // noteId가 있고 실제로 해당 노트가 존재하는 경우에만 수정
+    if (noteId && existingNote) {
       updateNote(noteId, { 
         title: title.trim(), 
         content: content.trim(),
@@ -69,6 +70,7 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
         videos: videos.length > 0 ? videos : undefined,
       });
     } else {
+      // noteId가 없거나 해당 노트가 없으면 새로 추가
       addNote({
         userId,
         date: dateStr,
