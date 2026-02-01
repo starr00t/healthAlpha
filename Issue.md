@@ -84,6 +84,10 @@ AI 건강 분석 및 예측
 3. Vercel 배포 - 실제 사용 시작
 4. PWA 전환 - 모바일 경험 개선
 
-장기 (2주+):
-5. Supabase 마이그레이션 - 진정한 클라우드 앱
+장기 (2주+): 현재 프로젝트 생성만 했음. 20160201.
+5. Supabase 마이그레이션 - 진정한 클라우드 앱 -> 프로젝트:healthalpha PW:supabase@3724
+ - project url : https://qbtifiwhiszqabcjrpvw.supabase.co
+ - Api key [NEXT_PUBLIC_SUPABASE_ANON_KEY]: sb_publishable_bFr7gWnIRBayyfmQ7AgE8g_z9JAZ-D5
+ - Secret key [SUPABASE_SERVICE_ROLE_KEY]: sb_secret_c-V6HPDrK-BGED3-S48dwA_VwvR3MOB
+
 6. 새로운 건강 기능 - 식단, 운동, 수면 등
