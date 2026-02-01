@@ -264,26 +264,44 @@ export const useCalendarStore = create<CalendarStore>()(
           updatedAt: now,
         };
 
-        set((state) => ({
-          diaries: [...state.diaries, newDiary],
-        }));
+        const previousDiaries = get().diaries;
         
-        if (get().syncEnabled) {
-          get().syncToServer();
+        try {
+          set((state) => ({
+            diaries: [...state.diaries, newDiary],
+          }));
+          
+          if (get().syncEnabled) {
+            get().syncToServer();
+          }
+        } catch (error) {
+          // 저장 실패 시 state 롤백
+          set({ diaries: previousDiaries });
+          console.error('다이어리 추가 실패:', error);
+          throw error;
         }
       },
 
       updateDiary: (id, updates) => {
-        set((state) => ({
-          diaries: state.diaries.map((diary) =>
-            diary.id === id
-              ? { ...diary, ...updates, updatedAt: new Date().toISOString() }
-              : diary
-          ),
-        }));
+        const previousDiaries = get().diaries;
         
-        if (get().syncEnabled) {
-          get().syncToServer();
+        try {
+          set((state) => ({
+            diaries: state.diaries.map((diary) =>
+              diary.id === id
+                ? { ...diary, ...updates, updatedAt: new Date().toISOString() }
+                : diary
+            ),
+          }));
+          
+          if (get().syncEnabled) {
+            get().syncToServer();
+          }
+        } catch (error) {
+          // 저장 실패 시 state 롤백
+          set({ diaries: previousDiaries });
+          console.error('다이어리 수정 실패:', error);
+          throw error;
         }
       },
 

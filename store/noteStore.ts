@@ -90,15 +90,13 @@ export const useNoteStore = create<NoteStore>()(
           updatedAt: new Date().toISOString(),
         };
 
-        const previousNotes = get().notes; // 이전 상태 보관
+        const previousNotes = get().notes;
         const updatedNotes = [...previousNotes, newNote].sort(
           (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );
         
         try {
-          // 먼저 localStorage에 저장 시도
-          saveUserNotes(userId, updatedNotes);
-          // 성공하면 state 업데이트
+          // persist custom storage가 자동으로 저장하고 에러 처리
           set({ notes: updatedNotes });
           
           // 자동 동기화
@@ -106,9 +104,10 @@ export const useNoteStore = create<NoteStore>()(
             get().syncToServer();
           }
         } catch (error) {
-          // 저장 실패 시 state 롤백 (이미 업데이트되지 않음)
+          // 저장 실패 시 state 롤백
+          set({ notes: previousNotes });
           console.error('노트 추가 실패:', error);
-          throw error; // 에러를 다시 던짐서 컴포넌트에서 처리하도록
+          throw error;
         }
       },
 
@@ -116,7 +115,7 @@ export const useNoteStore = create<NoteStore>()(
         const { userId } = get();
         if (!userId) return;
 
-        const previousNotes = get().notes; // 이전 상태 보관
+        const previousNotes = get().notes;
         const updatedNotes = previousNotes.map((note) =>
           note.id === id 
             ? { ...note, ...updates, updatedAt: new Date().toISOString() } 
@@ -124,9 +123,7 @@ export const useNoteStore = create<NoteStore>()(
         );
         
         try {
-          // 먼저 localStorage에 저장 시도
-          saveUserNotes(userId, updatedNotes);
-          // 성공하면 state 업데이트
+          // persist custom storage가 자동으로 저장하고 에러 처리
           set({ notes: updatedNotes });
           
           // 자동 동기화
@@ -134,7 +131,8 @@ export const useNoteStore = create<NoteStore>()(
             get().syncToServer();
           }
         } catch (error) {
-          // 저장 실패 시 state 롤백 (이미 업데이트되지 않음)
+          // 저장 실패 시 state 롤백
+          set({ notes: previousNotes });
           console.error('노트 수정 실패:', error);
           throw error;
         }
@@ -209,6 +207,42 @@ export const useNoteStore = create<NoteStore>()(
     }),
     {
       name: 'health-notes',
+      storage: {
+        getItem: (name) => {
+          const str = localStorage.getItem(name);
+          return str ? JSON.parse(str) : null;
+        },
+        setItem: (name, value) => {
+          try {
+            const stringified = JSON.stringify(value);
+            const sizeInBytes = new Blob([stringified]).size;
+            const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
+            
+            console.log(`💾 노트 저장 시도: ${sizeInMB}MB`);
+            
+            // 10MB 제한
+            if (sizeInBytes > 10 * 1024 * 1024) {
+              throw new Error(`저장 용량 초과 (${sizeInMB}MB / 10MB). 사진이나 동영상을 줄여주세요.`);
+            }
+            
+            localStorage.setItem(name, stringified);
+            console.log(`✅ 노트 저장 성공: ${sizeInMB}MB`);
+          } catch (error) {
+            console.error('❌ 노트 저장 실패:', error);
+            
+            if (error instanceof Error) {
+              if (error.name === 'QuotaExceededError' || error.message.includes('quota')) {
+                throw new Error('저장 공간이 부족합니다. 이전 노트나 사진을 삭제해주세요.');
+              }
+              throw error;
+            }
+            throw new Error('저장 중 오류가 발생했습니다.');
+          }
+        },
+        removeItem: (name) => {
+          localStorage.removeItem(name);
+        },
+      },
     }
   )
 );
