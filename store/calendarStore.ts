@@ -325,6 +325,34 @@ export const useCalendarStore = create<CalendarStore>()(
         syncEnabled: state.syncEnabled,
         lastSyncTime: state.lastSyncTime,
       }),
+      storage: {
+        getItem: (name) => {
+          const str = localStorage.getItem(name);
+          return str ? JSON.parse(str) : null;
+        },
+        setItem: (name, value) => {
+          try {
+            const str = JSON.stringify(value);
+            // 저장 크기 확인 (약 5MB 제한)
+            if (str.length > 5 * 1024 * 1024) {
+              console.warn('캘린더 데이터가 너무 큽니다:', Math.round(str.length / 1024 / 1024), 'MB');
+              alert('저장할 데이터가 너무 큽니다. 다이어리의 사진/영상을 줄여주세요.');
+              throw new Error('Data too large');
+            }
+            localStorage.setItem(name, str);
+          } catch (error: any) {
+            if (error.name === 'QuotaExceededError' || error.message?.includes('quota')) {
+              console.error('localStorage quota exceeded for calendar');
+              alert('저장 공간이 부족합니다. 다이어리의 사진이나 동영상을 줄여주세요.');
+              throw error;
+            }
+            throw error;
+          }
+        },
+        removeItem: (name) => {
+          localStorage.removeItem(name);
+        },
+      },
       // 상태 변경 시 자동 동기화
       onRehydrateStorage: () => (state) => {
         if (state?.syncEnabled && state?.userEmail) {
