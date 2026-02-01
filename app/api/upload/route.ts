@@ -17,11 +17,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 파일 크기 제한 (사진 2MB, 동영상 10MB)
-    const maxSize = type === 'photo' ? 2 * 1024 * 1024 : 10 * 1024 * 1024;
+    // 파일 크기 제한 (사진 10MB, 동영상 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: `파일 크기가 너무 큽니다. (최대 ${type === 'photo' ? '2MB' : '10MB'})` },
+        { error: `파일 크기가 너무 큽니다. (최대 10MB)` },
         { status: 400 }
       );
     }

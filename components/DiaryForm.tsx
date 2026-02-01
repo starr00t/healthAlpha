@@ -49,6 +49,7 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
     photos: existingDiary?.photos || [] as string[],
     videos: existingDiary?.videos || [] as string[],
   });
+  const [uploadingPhotos, setUploadingPhotos] = useState<{[key: string]: boolean}>({});
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -146,13 +147,23 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
     const files = e.target.files;
     if (!files || !userId) return;
 
-    const maxSize = 2 * 1024 * 1024; // 2MB
+    const maxSize = 10 * 1024 * 1024; // 10MB
 
     for (const file of Array.from(files)) {
       if (file.size > maxSize) {
-        alert(`${file.name}은(는) 너무 큽니다. 2MB 이하의 이미지만 업로드 가능합니다.`);
+        alert(`${file.name}은(는) 너무 큽니다. 10MB 이하의 이미지만 업로드 가능합니다.`);
         continue;
       }
+
+      // 미리보기를 위한 로컬 URL 생성
+      const localUrl = URL.createObjectURL(file);
+      
+      // 미리보기 추가 및 업로드 상태 표시
+      setFormData((prev) => ({
+        ...prev,
+        photos: [...prev.photos, localUrl],
+      }));
+      setUploadingPhotos((prev) => ({ ...prev, [localUrl]: true }));
 
       try {
         // Blob Storage에 업로드
@@ -172,13 +183,35 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
         }
 
         const { url } = await response.json();
+        
+        // 임시 URL을 실제 URL로 교체
         setFormData((prev) => ({
           ...prev,
-          photos: [...prev.photos, url],
+          photos: prev.photos.map(p => p === localUrl ? url : p),
         }));
+        setUploadingPhotos((prev) => {
+          const newState = { ...prev };
+          delete newState[localUrl];
+          return newState;
+        });
+        
+        // 로컬 URL 해제
+        URL.revokeObjectURL(localUrl);
       } catch (error) {
         console.error('이미지 업로드 실패:', error);
         alert('이미지 업로드에 실패했습니다.');
+        
+        // 실패 시 제거
+        setFormData((prev) => ({
+          ...prev,
+          photos: prev.photos.filter(p => p !== localUrl),
+        }));
+        setUploadingPhotos((prev) => {
+          const newState = { ...prev };
+          delete newState[localUrl];
+          return newState;
+        });
+        URL.revokeObjectURL(localUrl);
       }
     }
     
@@ -632,10 +665,19 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
                 {formData.photos.map((photo, index) => (
                   <div key={index} className="relative group">
                     <img src={photo} alt={`업로드 ${index + 1}`} className="w-full h-32 object-cover rounded-lg" />
+                    {uploadingPhotos[photo] && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
+                        <div className="text-white text-sm font-medium">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                          업로드 중...
+                        </div>
+                      </div>
+                    )}
                     <button
                       type="button"
                       onClick={() => removePhoto(index)}
                       className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      disabled={uploadingPhotos[photo]}
                     >
                       ✕
                     </button>
