@@ -220,9 +220,9 @@ export const useNoteStore = create<NoteStore>()(
             
             console.log(`💾 노트 저장 시도: ${sizeInMB}MB`);
             
-            // 10MB 제한
-            if (sizeInBytes > 10 * 1024 * 1024) {
-              throw new Error(`저장 용량 초과 (${sizeInMB}MB / 10MB). 사진이나 동영상을 줄여주세요.`);
+            // 2MB 제한 (브라우저 전체 localStorage 5-10MB 고려)
+            if (sizeInBytes > 2 * 1024 * 1024) {
+              throw new Error(`노트 데이터가 너무 큽니다 (${sizeInMB}MB / 2MB).\n오래된 노트나 사진을 삭제해주세요.`);
             }
             
             localStorage.setItem(name, stringified);
