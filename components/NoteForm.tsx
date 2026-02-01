@@ -147,58 +147,42 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || !userId) return;
 
     const maxSize = 2 * 1024 * 1024; // 2MB
 
-    Array.from(files).forEach((file) => {
+    for (const file of Array.from(files)) {
       if (file.size > maxSize) {
         alert(`${file.name}은(는) 너무 큽니다. 2MB 이하의 이미지만 업로드 가능합니다.`);
-        return;
+        continue;
       }
 
-      // 이미지 압축
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          
-          // 최대 크기 제한 (1200px)
-          const maxDimension = 1200;
-          if (width > maxDimension || height > maxDimension) {
-            if (width > height) {
-              height = (height / width) * maxDimension;
-              width = maxDimension;
-            } else {
-              width = (width / height) * maxDimension;
-              height = maxDimension;
-            }
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          
-          // JPEG 품질 0.7로 압축
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-          setPhotos((prev) => [...prev, compressedDataUrl]);
-        };
-        img.onerror = () => {
-          alert('이미지 업로드에 실패했습니다.');
-        };
-        img.src = event.target?.result as string;
-      };
-      reader.onerror = () => {
+      try {
+        // Blob Storage에 업로드
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('userId', userId);
+        formData.append('type', 'photo');
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || '업로드 실패');
+        }
+
+        const { url } = await response.json();
+        setPhotos((prev) => [...prev, url]);
+      } catch (error) {
+        console.error('이미지 업로드 실패:', error);
         alert('이미지 업로드에 실패했습니다.');
-      };
-      reader.readAsDataURL(file);
-    });
+      }
+    }
     
     // 파일 입력 초기화 (같은 파일 다시 선택 가능)
     e.target.value = '';
@@ -208,27 +192,42 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || !userId) return;
 
     const maxSize = 10 * 1024 * 1024; // 10MB
 
-    Array.from(files).forEach((file) => {
+    for (const file of Array.from(files)) {
       if (file.size > maxSize) {
         alert(`${file.name}은(는) 너무 큽니다. 10MB 이하의 동영상만 업로드 가능합니다.`);
-        return;
+        continue;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setVideos((prev) => [...prev, reader.result as string]);
-      };
-      reader.onerror = () => {
+      try {
+        // Blob Storage에 업로드
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('userId', userId);
+        formData.append('type', 'video');
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || '업로드 실패');
+        }
+
+        const { url } = await response.json();
+        setVideos((prev) => [...prev, url]);
+      } catch (error) {
+        console.error('동영상 업로드 실패:', error);
         alert('동영상 업로드에 실패했습니다.');
-      };
-      reader.readAsDataURL(file);
-    });
+      }
+    }
     
     // 파일 입력 초기화
     e.target.value = '';
