@@ -50,11 +50,38 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // 초기값 저장
+  const [initialData] = useState({
+    mood: existingDiary?.mood || '',
+    content: existingDiary?.content || '',
+    tags: existingDiary?.tags?.join(', ') || '',
+    activities: existingDiary?.activities?.join(', ') || '',
+    photos: existingDiary?.photos || [],
+    videos: existingDiary?.videos || [],
+  });
 
   // 글자 수 계산
   useEffect(() => {
     setWordCount(formData.content.length);
   }, [formData.content]);
+
+  // 변경사항 감지
+  useEffect(() => {
+    const changed = 
+      formData.mood !== initialData.mood ||
+      formData.content !== initialData.content ||
+      formData.tags !== initialData.tags ||
+      formData.activities !== initialData.activities ||
+      JSON.stringify(formData.photos) !== JSON.stringify(initialData.photos) ||
+      JSON.stringify(formData.videos) !== JSON.stringify(initialData.videos);
+    
+    setHasChanges(changed);
+    if (changed && saveSuccess) {
+      setSaveSuccess(false);
+    }
+  }, [formData, initialData, saveSuccess]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +109,15 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
       }
 
       setSaveSuccess(true);
+      setHasChanges(false);
+      
+      // 초기 데이터 업데이트
+      initialData.mood = formData.mood;
+      initialData.content = formData.content;
+      initialData.tags = formData.tags;
+      initialData.activities = formData.activities;
+      initialData.photos = formData.photos;
+      initialData.videos = formData.videos;
       
       // 1초 후 성공 메시지를 보여주고 자동으로 닫지 않음 (사용자가 닫기 버튼 클릭)
       setTimeout(() => {
@@ -99,7 +135,14 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
     const files = e.target.files;
     if (!files) return;
 
+    const maxSize = 2 * 1024 * 1024; // 2MB
+
     Array.from(files).forEach((file) => {
+      if (file.size > maxSize) {
+        alert(`${file.name}은(는) 너무 큽니다. 2MB 이하의 이미지만 업로드 가능합니다.`);
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData((prev) => ({
@@ -107,8 +150,13 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
           photos: [...prev.photos, reader.result as string],
         }));
       };
+      reader.onerror = () => {
+        alert('이미지 업로드에 실패했습니다.');
+      };
       reader.readAsDataURL(file);
     });
+    
+    e.target.value = '';
   };
 
   const removePhoto = (index: number) => {
@@ -122,7 +170,14 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
     const files = e.target.files;
     if (!files) return;
 
+    const maxSize = 10 * 1024 * 1024; // 10MB
+
     Array.from(files).forEach((file) => {
+      if (file.size > maxSize) {
+        alert(`${file.name}은(는) 너무 큽니다. 10MB 이하의 동영상만 업로드 가능합니다.`);
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData((prev) => ({
@@ -130,8 +185,13 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
           videos: [...prev.videos, reader.result as string],
         }));
       };
+      reader.onerror = () => {
+        alert('동영상 업로드에 실패했습니다.');
+      };
       reader.readAsDataURL(file);
     });
+    
+    e.target.value = '';
   };
 
   const removeVideo = (index: number) => {
@@ -593,12 +653,20 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
 
         {/* 하단 버튼 */}
         <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
-          {saveSuccess && (
+          {saveSuccess && !hasChanges && (
             <div className="mb-3 p-3 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg flex items-center gap-2 text-green-800 dark:text-green-200">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               <span className="font-medium">저장되었습니다!</span>
+            </div>
+          )}
+          {hasChanges && (
+            <div className="mb-3 p-3 bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-lg flex items-center gap-2 text-amber-800 dark:text-amber-200">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span className="font-medium">내용이 변경되었습니다</span>
             </div>
           )}
           <div className="flex gap-2 md:gap-3">
@@ -607,11 +675,11 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
               onClick={onClose}
               className="flex-1 px-4 py-3 md:py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium min-h-[44px] md:min-h-0"
             >
-              {saveSuccess ? '닫기' : '취소'}
+              {saveSuccess && !hasChanges ? '닫기' : '취소'}
             </button>
             <button
               type="submit"
-              disabled={isSaving || saveSuccess}
+              disabled={isSaving || (saveSuccess && !hasChanges)}
               className="flex-1 px-4 py-3 md:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold min-h-[44px] md:min-h-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSaving ? (
