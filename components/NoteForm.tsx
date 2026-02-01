@@ -88,8 +88,11 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
     try {
       const dateStr = date.toISOString().split('T')[0] + 'T00:00:00.000Z';
 
+      console.log('저장 시작:', { noteId, existingNote: !!existingNote });
+
       // noteId가 있고 실제로 해당 노트가 존재하는 경우에만 수정
       if (noteId && existingNote) {
+        console.log('노트 수정:', noteId);
         updateNote(noteId, { 
           title: title.trim(), 
           content: content.trim(),
@@ -100,6 +103,7 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
         });
       } else {
         // noteId가 없거나 해당 노트가 없으면 새로 추가
+        console.log('노트 추가:', { userId, dateStr });
         addNote({
           userId,
           date: dateStr,
@@ -118,16 +122,26 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
       // 초기 데이터 업데이트 (저장 후 변경사항 없음 상태로)
       initialData.title = title.trim();
       initialData.content = content.trim();
-      initialData.photos = photos;
-      initialData.videos = videos;
+      initialData.photos = [...photos]; // 깊은 복사
+      initialData.videos = [...videos]; // 깊은 복사
+      
+      console.log('노트 저장 성공');
       
       // 1초 후 성공 메시지를 보여주고 자동으로 닫지 않음 (사용자가 닫기 버튼 클릭)
       setTimeout(() => {
         setIsSaving(false);
       }, 500);
-    } catch (error) {
+    } catch (error: any) {
       console.error('노트 저장 실패:', error);
-      alert('노트 저장에 실패했습니다.');
+      let errorMessage = '노트 저장에 실패했습니다.';
+      
+      if (error.message && error.message.includes('quota')) {
+        errorMessage = '저장 공간이 부족합니다. 사진이나 동영상을 줄여주세요.';
+      } else if (photos.length > 0 || videos.length > 0) {
+        errorMessage = '사진/동영상 파일이 너무 큽니다. 크기를 줄여주세요.';
+      }
+      
+      alert(errorMessage);
       setIsSaving(false);
       setSaveSuccess(false);
     }

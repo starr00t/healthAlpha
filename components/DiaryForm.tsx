@@ -116,16 +116,26 @@ export default function DiaryForm({ date, onClose, onSuccess }: DiaryFormProps) 
       initialData.content = formData.content;
       initialData.tags = formData.tags;
       initialData.activities = formData.activities;
-      initialData.photos = formData.photos;
-      initialData.videos = formData.videos;
+      initialData.photos = [...formData.photos]; // 깊은 복사
+      initialData.videos = [...formData.videos]; // 깊은 복사
+      
+      console.log('다이어리 저장 성공');
       
       // 1초 후 성공 메시지를 보여주고 자동으로 닫지 않음 (사용자가 닫기 버튼 클릭)
       setTimeout(() => {
         setIsSaving(false);
       }, 500);
-    } catch (error) {
+    } catch (error: any) {
       console.error('다이어리 저장 실패:', error);
-      alert('다이어리 저장에 실패했습니다.');
+      let errorMessage = '다이어리 저장에 실패했습니다.';
+      
+      if (error.message && error.message.includes('quota')) {
+        errorMessage = '저장 공간이 부족합니다. 사진이나 동영상을 줄여주세요.';
+      } else if (formData.photos.length > 0 || formData.videos.length > 0) {
+        errorMessage = '사진/동영상 파일이 너무 큽니다. 크기를 줄여주세요.';
+      }
+      
+      alert(errorMessage);
       setIsSaving(false);
       setSaveSuccess(false);
     }

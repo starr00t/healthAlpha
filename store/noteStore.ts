@@ -22,7 +22,23 @@ interface NoteStore {
 
 const saveUserNotes = (userId: string, notes: Note[]) => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(`health-notes-${userId}`, JSON.stringify(notes));
+    try {
+      const dataStr = JSON.stringify(notes);
+      // 저장 크기 확인 (약 5MB 제한)
+      if (dataStr.length > 5 * 1024 * 1024) {
+        console.warn('노트 데이터가 너무 큽니다:', Math.round(dataStr.length / 1024 / 1024), 'MB');
+        alert('저장할 데이터가 너무 큽니다. 사진/영상을 줄여주세요.');
+        throw new Error('Data too large');
+      }
+      localStorage.setItem(`health-notes-${userId}`, dataStr);
+    } catch (error: any) {
+      if (error.name === 'QuotaExceededError' || error.message?.includes('quota')) {
+        console.error('localStorage quota exceeded');
+        alert('저장 공간이 부족합니다. 사진이나 동영상을 줄여주세요.');
+        throw error;
+      }
+      throw error;
+    }
   }
 };
 
