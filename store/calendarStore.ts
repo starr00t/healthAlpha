@@ -338,19 +338,20 @@ export const useCalendarStore = create<CalendarStore>()(
             // 저장 크기 확인 (10MB 제한)
             if (str.length > 10 * 1024 * 1024) {
               console.warn('캘린더 데이터가 너무 큽니다:', dataSizeMB.toFixed(2), 'MB');
-              alert(`저장할 데이터가 너무 큽니다 (${dataSizeMB.toFixed(1)}MB).\n오래된 다이어리의 사진/영상을 삭제하거나 다이어리를 줄여주세요.`);
+              const errorMsg = `저장할 데이터가 너무 큽니다 (${dataSizeMB.toFixed(1)}MB).\n오래된 다이어리의 사진/영상을 삭제하거나 다이어리를 줄여주세요.`;
+              alert(errorMsg);
               throw new Error('Data too large');
             }
             
             console.log('캘린더 저장 크기:', dataSizeMB.toFixed(2), 'MB');
             localStorage.setItem(name, str);
           } catch (error: any) {
+            console.error('캘린더 저장 실패:', error);
             if (error.name === 'QuotaExceededError' || error.message?.includes('quota')) {
               console.error('localStorage quota exceeded for calendar');
               alert('저장 공간이 부족합니다.\n브라우저 데이터를 정리하거나 다이어리의 사진/영상을 줄여주세요.');
-              throw error;
             }
-            throw error;
+            throw error; // 에러를 다시 던져서 Zustand가 롤백하도록
           }
         },
         removeItem: (name) => {

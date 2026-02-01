@@ -90,16 +90,25 @@ export const useNoteStore = create<NoteStore>()(
           updatedAt: new Date().toISOString(),
         };
 
-        const updatedNotes = [...get().notes, newNote].sort(
+        const previousNotes = get().notes; // 이전 상태 보관
+        const updatedNotes = [...previousNotes, newNote].sort(
           (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );
         
-        set({ notes: updatedNotes });
-        saveUserNotes(userId, updatedNotes);
-        
-        // 자동 동기화
-        if (get().syncEnabled) {
-          get().syncToServer();
+        try {
+          // 먼저 localStorage에 저장 시도
+          saveUserNotes(userId, updatedNotes);
+          // 성공하면 state 업데이트
+          set({ notes: updatedNotes });
+          
+          // 자동 동기화
+          if (get().syncEnabled) {
+            get().syncToServer();
+          }
+        } catch (error) {
+          // 저장 실패 시 state 롤백 (이미 업데이트되지 않음)
+          console.error('노트 추가 실패:', error);
+          throw error; // 에러를 다시 던짐서 컴포넌트에서 처리하도록
         }
       },
 
@@ -107,18 +116,27 @@ export const useNoteStore = create<NoteStore>()(
         const { userId } = get();
         if (!userId) return;
 
-        const updatedNotes = get().notes.map((note) =>
+        const previousNotes = get().notes; // 이전 상태 보관
+        const updatedNotes = previousNotes.map((note) =>
           note.id === id 
             ? { ...note, ...updates, updatedAt: new Date().toISOString() } 
             : note
         );
         
-        set({ notes: updatedNotes });
-        saveUserNotes(userId, updatedNotes);
-        
-        // 자동 동기화
-        if (get().syncEnabled) {
-          get().syncToServer();
+        try {
+          // 먼저 localStorage에 저장 시도
+          saveUserNotes(userId, updatedNotes);
+          // 성공하면 state 업데이트
+          set({ notes: updatedNotes });
+          
+          // 자동 동기화
+          if (get().syncEnabled) {
+            get().syncToServer();
+          }
+        } catch (error) {
+          // 저장 실패 시 state 롤백 (이미 업데이트되지 않음)
+          console.error('노트 수정 실패:', error);
+          throw error;
         }
       },
 
