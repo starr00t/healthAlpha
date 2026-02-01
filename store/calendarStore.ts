@@ -353,10 +353,10 @@ export const useCalendarStore = create<CalendarStore>()(
             const str = JSON.stringify(value);
             const dataSizeMB = str.length / 1024 / 1024;
             
-            // 저장 크기 확인 (2MB 제한, 브라우저 전체 localStorage 5-10MB 고려)
-            if (str.length > 2 * 1024 * 1024) {
+            // 저장 크기 확인 (10MB 제한, 브라우저 전체 localStorage 5-10MB 고려, Blob URL로 여유있음)
+            if (str.length > 10 * 1024 * 1024) {
               console.warn('캘린더 데이터가 너무 큽니다:', dataSizeMB.toFixed(2), 'MB');
-              const errorMsg = `다이어리 데이터가 너무 큽니다 (${dataSizeMB.toFixed(1)}MB / 2MB).\n오래된 다이어리의 사진/영상을 삭제해주세요.`;
+              const errorMsg = `다이어리 데이터가 너무 큽니다 (${dataSizeMB.toFixed(1)}MB / 10MB).\n오래된 다이어리의 사진/영상을 삭제해주세요.`;
               alert(errorMsg);
               throw new Error('Data too large');
             }
