@@ -159,9 +159,40 @@ export default function NoteForm({ date, onClose, onSuccess, noteId }: NoteFormP
         return;
       }
 
+      // 이미지 압축
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotos((prev) => [...prev, reader.result as string]);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // 최대 크기 제한 (1200px)
+          const maxDimension = 1200;
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height / width) * maxDimension;
+              width = maxDimension;
+            } else {
+              width = (width / height) * maxDimension;
+              height = maxDimension;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // JPEG 품질 0.7로 압축
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          setPhotos((prev) => [...prev, compressedDataUrl]);
+        };
+        img.onerror = () => {
+          alert('이미지 업로드에 실패했습니다.');
+        };
+        img.src = event.target?.result as string;
       };
       reader.onerror = () => {
         alert('이미지 업로드에 실패했습니다.');
